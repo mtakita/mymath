@@ -1,0 +1,5 @@
+﻿  mymath.cpp
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(26,15): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(81,46): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(87,51): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  mymath.vcxproj -> C:\Users\makot\Documents\GitHub\mymath\mymath\Debug\mymath.exe
