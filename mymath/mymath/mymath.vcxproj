@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="detectlinkerror.cpp" />
     <ClCompile Include="mymath.cpp" />
   </ItemGroup>
   <ItemGroup>

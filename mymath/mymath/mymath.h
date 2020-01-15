@@ -3,6 +3,8 @@
 #ifndef _MYMATH_
 #define _MYMATH_
 
+#include <math.h>
+
 namespace mymath {
 
 	template < typename T, int len >
@@ -66,6 +68,16 @@ namespace mymath {
 			return data[h];
 		}
 
+		const VectorN<T, len> operator/(const T& v) {
+
+			VectorN<T, len> ret;
+			for (int i = 0; i < len; i++) {
+				ret[i] = (*this)[i] / v;
+			}
+
+			return ret;
+		}
+
 		const VectorN<T, len> operator+(const VectorN<T, len>& that) const {
 
 			VectorN<T, len> ret = *this;
@@ -107,6 +119,27 @@ namespace mymath {
 			return ret;
 		}
 
+		VectorN<T, len> cross(VectorN<T, len>& that) {
+
+			VectorN<T, len> crossed;
+
+			for (int i = 0; i < len; i++) {
+				crossed[i] = (*this)[(i + 1) % len] * that[(i + 2) % len]
+							- that[(i + 1) % len] * (*this)[(i + 2) % len];
+			}
+
+			return crossed;
+		}
+
+		T abs() {
+			return sqrt((*this) * (*this));
+		}
+
+		VectorN normalize() {
+			T t = abs();
+			return (*this) / t;
+		}
+
 	protected:
 		T data[len];
 	};
@@ -119,11 +152,13 @@ namespace mymath {
 			base::data[0] = 0;
 			base::data[1] = 0;
 		}
+		Vector2(const base& that) : base(that) {
+		}
+
 		Vector2(T u, T v) {
 			base::data[0] = u;
 			base::data[1] = v;
 		}
-
 
 	};
 
@@ -150,6 +185,15 @@ namespace mymath {
 			base::data[2] = 0;
 		}
 
+		T getX() const { return base::data[0]; }
+		T getY() const { return base::data[1]; }
+		T getZ() const { return base::data[2]; }
+
+		void setX(const T& v) { base::data[0] = v; }
+		void setY(const T& v) { base::data[1] = v; }
+		void setZ(const T& v) { base::data[2] = v; }
+
+		// Duplicate.  
 		const Vector3 cross(const Vector3& that) {
 
 			Vector3 ret = {
@@ -163,6 +207,7 @@ namespace mymath {
 	};
 
 	typedef Vector3<float> Vectorf3;
+	typedef Vector3<int> Vectori3;
 
 	template< typename T >
 	class Vector4 : public VectorN <T, 4 > {
@@ -233,14 +278,14 @@ namespace mymath {
 
 
 
-	template< typename T, int w, int h >
+	template< typename T, int h, int w >
 	class MatrixNM {
 
 	public:
 		typedef class VectorN<T, h> vector_type;
 
 		MatrixNM() {
-			for (int i = 0; i < w; i++) {
+			for (int i = 0; i < h; i++) {
 				data[i] = vector_type{0};
 			}
 /*
@@ -251,7 +296,7 @@ namespace mymath {
 		}
 
 		MatrixNM(const T& v) {
-			for (int i = 0; i < w; i++) {
+			for (int i = 0; i < h; i++) {
 				data[i] = v;
 			}
 		}
@@ -261,7 +306,7 @@ namespace mymath {
 		}
 
 		MatrixNM(const vector_type& that) {
-			for (int i = 0; i < w; i++) {
+			for (int i = 0; i < h; i++) {
 				data[i] = that;
 			}
 		}
@@ -270,11 +315,14 @@ namespace mymath {
 			return data[w];
 		}
 
+		operator T* () { return &data[0][0]; }
+
+
 	protected:
-		VectorN<T, h> data[w];
+		VectorN<T, w> data[h];
 
 		void assign(const MatrixNM& that) {
-			for (int i = 0; i < w; i++) {
+			for (int i = 0; i < h; i++) {
 				data[i] = that.data[i];
 			}
 
@@ -326,7 +374,46 @@ namespace mymath {
 			return ret;
 		}
 
+		Matrix3x3 orthogonilize() const {
 
+			Matrix3x3 orth = *this;
+
+			// orth[0] = orth[0] 1st row will be the same as before.
+
+			orth[1] = orth[1] -
+				(orth[1] * orth[0]) / (orth[0] * orth[0]) * orth[0];
+
+			orth[2] = orth[2] -
+				(orth[2] * orth[0]) / (orth[0] * orth[0]) * orth[0] -
+				(orth[2] * orth[1]) / (orth[1] * orth[1]) * orth[1] ;
+
+			return orth;
+		}
+
+		Matrix3x3 transpose() {
+
+			Matrix3x3 trans = *this;
+
+			for (int j = 0; j < 3; j++) {
+				for (int i = 0; i < 3; i++) {
+					trans[i][j] = (*this)[j][i];
+				}
+			}
+
+			return trans;
+		}
+
+		Matrix3x3 normalize() {
+
+			Matrix3x3 norm;
+
+			for (int i = 0; i < 3; i++) {
+				norm[i] = (*this)[i].normalize();
+			}
+
+			return norm;
+
+		}
 	};
 	
 	typedef Matrix3x3<float> Matrixf3x3;
@@ -375,10 +462,15 @@ namespace mymath {
 		}
 
 		void identity() {
-			base::data[0] = { 1,0,0,0 };
-			base::data[1] = { 0,1,0,0 };
-			base::data[2] = { 0,0,1,0 };
-			base::data[3] = { 0,0,0,1 };
+			Vectorf4 row1 = { 1.0f,0.0f,0.0f,0.0f };
+			Vectorf4 row2 = { 0.0f,1.0f,0.0f,0.0f };
+			Vectorf4 row3 = { 0.0f,0.0f,1.0f,0.0f };
+			Vectorf4 row4 = { 0.0f,0.0f,0.0f,1.0f };
+
+			base::data[0] = row1;
+			base::data[1] = row2;
+			base::data[2] = row3;
+			base::data[3] = row4;
 		}
 
 		base::vector_type& operator[](const int w) {
@@ -413,6 +505,51 @@ namespace mymath {
 			return ret;
 		}
 
+		Matrix4x4 orthogonilize() const {
+
+			Matrix4x4 orth = *this;
+
+			// orth[0] = orth[0] 1st row will be the same as before.
+
+			orth[1] = orth[1] -
+				(orth[1] * orth[0]) / (orth[0] * orth[0]) * orth[0];
+
+			orth[2] = orth[2] -
+				(orth[2] * orth[0]) / (orth[0] * orth[0]) * orth[0] -
+				(orth[2] * orth[1]) / (orth[1] * orth[1]) * orth[1];
+
+			orth[3] = orth[3] -
+				(orth[3] * orth[0]) / (orth[0] * orth[0]) * orth[0] -
+				(orth[3] * orth[1]) / (orth[1] * orth[1]) * orth[1] -
+				(orth[3] * orth[2]) / (orth[2] * orth[2]) * orth[2];
+
+			return orth;
+		}
+
+		Matrix4x4 transpose()  {
+
+			Matrix4x4 trans = *this;
+
+			for (int j = 0; j < 4; j++) {
+				for (int i = 0; i < 4; i++) {
+					trans[i][j] = (*this)[j][i];
+				}
+			}
+
+			return trans;
+		}
+
+		Matrix4x4 normalize() {
+
+			Matrix4x4 norm;
+
+			for (int i = 0; i < 4; i++) {
+				norm[i] = (*this)[i].normalizd();
+			}
+
+			return norm;
+
+		}
 
 	};
 
@@ -449,7 +586,8 @@ namespace mymath {
 		return ret;
 	}
 */
-	Vector4<float> operator*(const Vector4<float>& inThis, const Matrixf4x4& inThat) {
+
+	static Vector4<float> operator*(const Vector4<float>& inThis, const Matrixf4x4& inThat) {
 		Vector4<float> ret;
 
 		Vector4<float> myThis = inThis;
@@ -463,6 +601,55 @@ namespace mymath {
 		return ret;
 	}
 
+	static Matrixf4x4 frustum(float left, float right, float bottom, float top, float n, float f)
+	{
+		Matrixf4x4 perspectiveTransform;
+
+		perspectiveTransform[0][0] = (2.0f * n) / (right - left);
+
+		perspectiveTransform[1][1] = (2.0f * n) / (top - bottom);
+
+		perspectiveTransform[2][0] = (right + left) / (right - left);
+		perspectiveTransform[2][1] = (top + bottom) / (top - bottom);
+		perspectiveTransform[2][2] = -(f + n) / (f - n);
+		perspectiveTransform[2][3] = -1.0f;
+
+		perspectiveTransform[3][2] = -(2.0f * f * n) / (f - n);
+
+		return perspectiveTransform;
+	}
+
+	static Matrixf4x4 rotate(float normal_x, float normal_y, float normal_z, float theta)
+	{
+		Matrixf4x4 rotationTransform;
+		rotationTransform.identity();
+
+		rotationTransform[0][0] = pow(normal_x, 2) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[0][1] = normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta);
+		rotationTransform[0][2] = normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta);
+
+		rotationTransform[1][0] = normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta);
+		rotationTransform[1][1] = pow(normal_y, 2) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[1][2] = normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta);
+
+		rotationTransform[2][0] = normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta);
+		rotationTransform[2][1] = normal_y * normal_x * (1 - cos(theta)) - normal_x * sin(theta);
+		rotationTransform[2][2] = pow(normal_z, 2) * (1 - cos(theta)) + cos(theta);
+
+		return rotationTransform;
+	}
+
+	static Matrixf4x4 translate(float normal_x, float normal_y, float normal_z)
+	{
+		Matrixf4x4 transltionTransform;
+		transltionTransform.identity();
+
+		transltionTransform[3][0] = normal_x;
+		transltionTransform[3][1] = normal_y;
+		transltionTransform[3][2] = normal_z;
+
+		return transltionTransform;
+	}
 
 
 };

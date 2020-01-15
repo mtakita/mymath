@@ -1,0 +1,52 @@
+﻿  detectlinkerror.cpp
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(627,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(628,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(629,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(631,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(632,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(633,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(635,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(636,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(637,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+          with
+          [
+              T=float
+          ]
+  mymath.cpp
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(26,15): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(81,46): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(87,51): warning C4305: '引数': 'double' から 'float' へ切り詰めます。
+  コードを生成中...
+  mymath.vcxproj -> C:\Users\makot\Documents\GitHub\mymath\mymath\x64\Debug\mymath.exe
