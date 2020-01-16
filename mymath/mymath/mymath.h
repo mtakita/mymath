@@ -46,7 +46,7 @@ namespace mymath {
 			return ret;
 		}
 
-		const VectorN& operator*=(const T& v){
+		const VectorN& operator*=(const T& v) {
 
 			for (int i = 0; i < len; i++) {
 				data[i] *= v;
@@ -125,7 +125,7 @@ namespace mymath {
 
 			for (int i = 0; i < len; i++) {
 				crossed[i] = (*this)[(i + 1) % len] * that[(i + 2) % len]
-							- that[(i + 1) % len] * (*this)[(i + 2) % len];
+					- that[(i + 1) % len] * (*this)[(i + 2) % len];
 			}
 
 			return crossed;
@@ -165,7 +165,7 @@ namespace mymath {
 	typedef Vector2<float> Vectorf2;
 
 	template< typename T >
-	class Vector3 : public VectorN <T, 3 >{
+	class Vector3 : public VectorN <T, 3 > {
 		typedef VectorN <T, 3 > base;
 		typedef Vector3<T> mytype;
 
@@ -176,7 +176,7 @@ namespace mymath {
 			base::data[2] = z;
 		}
 
-		Vector3( const base& that) : base( that ) {
+		Vector3(const base& that) : base(that) {
 		}
 
 		Vector3() {
@@ -261,11 +261,23 @@ namespace mymath {
 	*/
 
 	template< typename T >
-	const VectorN<T,3> operator*(const T& v, const VectorN<T, 3>& that) {
+	const VectorN<T, 3> operator*(const T& v, const VectorN<T, 3>& that) {
 
 		VectorN<T, 3> ret = that;
 
 		for (int i = 0; i < 3; i++) {
+			ret[i] = v * ret[i];
+		}
+
+		return ret;
+	}
+
+	template< typename T >
+	const VectorN<T, 4> operator*(const T& v, const VectorN<T, 4>& that) {
+
+		VectorN<T, 4> ret = that;
+
+		for (int i = 0; i < 4; i++) {
 			ret[i] = v * ret[i];
 		}
 
@@ -286,13 +298,13 @@ namespace mymath {
 
 		MatrixNM() {
 			for (int i = 0; i < h; i++) {
-				data[i] = vector_type{0};
+				data[i] = vector_type{ 0 };
 			}
-/*
-			for (int i = 0; i < w; i++) {
-				data[i][i] = 1;
-			}
-*/
+			/*
+						for (int i = 0; i < w; i++) {
+							data[i][i] = 1;
+						}
+			*/
 		}
 
 		MatrixNM(const T& v) {
@@ -310,8 +322,8 @@ namespace mymath {
 				data[i] = that;
 			}
 		}
-	
-		VectorN<T, h>& operator[](int w)  {
+
+		VectorN<T, h>& operator[](int w) {
 			return data[w];
 		}
 
@@ -337,7 +349,7 @@ namespace mymath {
 		typedef MatrixNM< T, 3, 3> base;
 		typedef T element_type;
 
-		Matrix3x3() : MatrixNM< T, 3, 3>{}  {
+		Matrix3x3() : MatrixNM< T, 3, 3>{} {
 
 		}
 
@@ -354,7 +366,7 @@ namespace mymath {
 
 		}
 
-		base::vector_type& operator[](const int w){
+		base::vector_type& operator[](const int w) {
 			return base::data[w];
 		}
 
@@ -385,7 +397,7 @@ namespace mymath {
 
 			orth[2] = orth[2] -
 				(orth[2] * orth[0]) / (orth[0] * orth[0]) * orth[0] -
-				(orth[2] * orth[1]) / (orth[1] * orth[1]) * orth[1] ;
+				(orth[2] * orth[1]) / (orth[1] * orth[1]) * orth[1];
 
 			return orth;
 		}
@@ -415,7 +427,7 @@ namespace mymath {
 
 		}
 	};
-	
+
 	typedef Matrix3x3<float> Matrixf3x3;
 
 	template< typename T >
@@ -500,7 +512,7 @@ namespace mymath {
 			Matrixf3x3 ret = { { base::data[0][0] / w, base::data[0][1] / w, base::data[0][2] / w },
 							   { base::data[1][0] / w, base::data[1][1] / w, base::data[1][2] / w },
 							   { base::data[2][0] / w, base::data[2][1] / w, base::data[2][2] / w },
-							};
+			};
 
 			return ret;
 		}
@@ -526,7 +538,7 @@ namespace mymath {
 			return orth;
 		}
 
-		Matrix4x4 transpose()  {
+		Matrix4x4 transpose() {
 
 			Matrix4x4 trans = *this;
 
@@ -544,7 +556,7 @@ namespace mymath {
 			Matrix4x4 norm;
 
 			for (int i = 0; i < 4; i++) {
-				norm[i] = (*this)[i].normalizd();
+				norm[i] = (*this)[i].normalize();
 			}
 
 			return norm;
@@ -555,22 +567,22 @@ namespace mymath {
 
 	typedef Matrix4x4<float> Matrixf4x4;
 
-/*
-	// Dot Product
-	Vector3<float> operator*(const matrixf3x3& inThis, const matrixf3x3& inThat) {
-		Vector3<float> ret;
+	/*
+		// Dot Product
+		Vector3<float> operator*(const matrixf3x3& inThis, const matrixf3x3& inThat) {
+			Vector3<float> ret;
 
-		matrixf3x3 myThis = inThis;
-		matrixf3x3 myThat = inThat;
-		for (int i = 0; i < 3; i++) {
-			for (int k = 0; k < 3; k++) {
-				ret[i] += myThis[i][k] * myThat[i][k];
+			matrixf3x3 myThis = inThis;
+			matrixf3x3 myThat = inThat;
+			for (int i = 0; i < 3; i++) {
+				for (int k = 0; k < 3; k++) {
+					ret[i] += myThis[i][k] * myThat[i][k];
+				}
 			}
-		}
 
-		return ret;
-	}
-*/
+			return ret;
+		}
+	*/
 	/*
 	Vector3<float> operator*(const Vector3<float>& inThis, const matrixf3x3& inThat) {
 		Vector3<float> ret;
@@ -618,6 +630,42 @@ namespace mymath {
 
 		return perspectiveTransform;
 	}
+	/*
+		static Matrixf4x4 frustum(float zoomX, float zoomY, float left, float right, float bottom, float top, float n, float f)
+		{
+			Matrixf4x4 perspectiveTransform;
+
+			perspectiveTransform[0][0] = zoomX * ((2.0f * n) / (right - left));
+
+			perspectiveTransform[1][1] = zoomY * ((2.0f * n) / (top - bottom));
+
+			perspectiveTransform[2][0] = zoomX * ((right + left) / (right - left));
+			perspectiveTransform[2][1] = zoomY * ((top + bottom) / (top - bottom));
+			perspectiveTransform[2][2] = f / (n - f);
+			perspectiveTransform[2][3] = -1.0f;
+
+			perspectiveTransform[3][2] = (f * n) / (n - f);
+
+			return perspectiveTransform;
+		}
+	*/
+	static Matrixf4x4 frustum(float zoomX, float zoomY, float left, float right, float bottom, float top, float n, float f)
+	{
+		Matrixf4x4 perspectiveTransform;
+
+		perspectiveTransform[0][0] = zoomX * ((2.0f * n) / (right - left));
+
+		perspectiveTransform[1][1] = zoomY * ((2.0f * n) / (top - bottom));
+
+		perspectiveTransform[2][0] = zoomX * (-(left + right) / (right - left));
+		perspectiveTransform[2][1] = zoomY * (-(bottom + top) / (top - bottom));
+		perspectiveTransform[2][2] = f / (n - f);
+		perspectiveTransform[2][3] = -1.0f;
+
+		perspectiveTransform[3][2] = -(n * f) / (n - f);
+
+		return perspectiveTransform;
+	}
 
 	static Matrixf4x4 rotate(float normal_x, float normal_y, float normal_z, float theta)
 	{
@@ -639,14 +687,15 @@ namespace mymath {
 		return rotationTransform;
 	}
 
+	// Note that each coordinate will be negated before calculation for convenience.
 	static Matrixf4x4 translate(float normal_x, float normal_y, float normal_z)
 	{
 		Matrixf4x4 transltionTransform;
 		transltionTransform.identity();
 
-		transltionTransform[3][0] = normal_x;
-		transltionTransform[3][1] = normal_y;
-		transltionTransform[3][2] = normal_z;
+		transltionTransform[3][0] = -normal_x;
+		transltionTransform[3][1] = -normal_y;
+		transltionTransform[3][2] = -normal_z;
 
 		return transltionTransform;
 	}

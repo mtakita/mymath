@@ -1,45 +1,45 @@
 ﻿  detectlinkerror.cpp
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(627,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(675,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(628,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(676,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(629,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(677,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(631,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(679,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(632,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(680,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(633,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(681,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(635,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(683,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(636,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(684,68): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
           ]
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(637,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
+C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.h(685,65): warning C4244: '=': 'double' から 'T' への変換です。データが失われる可能性があります。
           with
           [
               T=float
