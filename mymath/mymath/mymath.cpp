@@ -7,8 +7,59 @@
 #include <math.h>
 
 #include "mymath.h"
+#include "geometryhelper.h"
 
 using namespace mymath;
+
+#define PI 3.14159265
+
+Matrixf4x4 GetRotateMatrix4x4(float rotX, float rotY, float rotZ) {
+
+    // Rotate about x-axis.
+    Matrixf4x4 rotateAboutXMatriX = rotate(1.0f, 0.0f, 0.0f, rotX * (PI / 180.0f));
+
+    // Rotate about y-axis.
+    Matrixf4x4 rotateAboutYMatriY = rotate(0.0f, 1.0f, 0.0f, rotY * (PI / 180.0f));
+
+    // Rotate about z-axis.
+    Matrixf4x4 rotateAboutZMatriZ = rotate(0.0f, 0.0f, 1.0f, rotZ * (PI / 180.0f));
+
+    // Combine all.
+    Matrixf4x4 rotateMatrix = rotateAboutZMatriZ * rotateAboutYMatriY * rotateAboutXMatriX;
+
+    return rotateMatrix;
+}
+
+bool GetEulerAngle(Matrixf3x3 rotMatInW, float* rotX, float* rotY, float* rotZ)
+{
+    float yAxis, xAxis, zAxis;
+
+    float sp = -rotMatInW[2][1];
+    if (sp <= -1.0f) {
+        yAxis = -1.570796f;
+    }
+    else if (sp >= 1.0f) {
+        yAxis = 1.570796f;
+    }
+    else {
+        yAxis = asin(sp);
+    }
+
+    if (fabs(sp) > 0.9999f) {
+        zAxis = 0.0f;
+        xAxis = atan2(-rotMatInW[0][2], rotMatInW[0][0]);
+    }
+    else {
+        xAxis = atan2(rotMatInW[2][0], rotMatInW[2][2]);
+        zAxis = atan2(rotMatInW[0][1], rotMatInW[1][1]);
+    }
+
+    *rotX = xAxis * (180.f / PI );
+    *rotY = yAxis * (180.f / PI);
+    *rotZ = zAxis * (180.f / PI);
+
+    return true;
+}
 
 Matrixf4x4 genLoc4x4Mat( float x, float y, float z) {
 
@@ -436,15 +487,664 @@ void test6() {
 
 }
 
+
+
+#define PI 3.14159265
+/*
+void test7() {
+
+    std::cout << "Conversion test" << std::endl;
+
+    // Coordinate in world space.
+    Vectorf4 posWorld{ 7.0f, -16.0f, -31.0f, 1.0f };
+    std::cout << std::endl;
+    std::cout << "Position in world space" << std::endl;
+    printf("%7.3f %7.3f %7.3f \n", posWorld[0], posWorld[1], posWorld[2]);
+
+    // Constants setup.
+    float horizontalFov{ 60.0f };
+    float rectRight = 1000;
+    float rectLeft = 0;
+    float rectBottom = 600;
+    float rectTop = 0;
+
+    float zoomX = 1.0f / tan(horizontalFov * (PI / 180.0f) / 2.0f);
+    float zoomY = zoomX * (float(rectRight - rectLeft) / float(rectBottom - rectTop));
+
+    float left = -100.0f;
+    float right = +100.0f;
+    float top = +100.0f;
+    float bottom = -100.0f;
+    float n = +20.0f;
+    //    float f = -1000.0f;
+    float f = +120.0f;
+
+    float width = 800.0f;
+    float height = 600.0f;
+
+    // Triangle1 
+    Vectorf3 v1{ 98.152f, -49.077f, -33.856f };
+    Vectorf3 v2{ -49.076f, 98.155f, -33.856f };
+    Vectorf3 v3{ -49.076f, -49.077f, -33.856f };
+
+    // Triangle2
+    Vectorf3 v4{ 95.252f, 0.57901f, -19.478f };
+    Vectorf3 v5{ -51.975f, 147.81f, -19.478f };
+    Vectorf3 v6{ -51.975f, 0.57901f, -19.478f };
+
+    // Calculate perspective matrix.
+    Matrixf4x4 persMat = frustum2(
+        left,
+        right,
+        bottom,
+        top,
+        n,
+        f
+    );
+
+    std::cout << std::endl;
+    std::cout << "Perspective matrix." << std::endl;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (j + 1 < 4) {
+                printf("%7.3f ", persMat[i][j]);
+            }
+            else {
+                printf("%7.3f \n", persMat[i][j]);
+            }
+        }
+    }
+
+    // Perspective transform.
+    Vectorf4 posClip = posWorld * persMat;
+    std::cout << std::endl;
+    std::cout << "Position in homogeneous." << std::endl;
+    printf("%7.3f %7.3f %7.3f %7.3f \n", posClip[0], posClip[1], posClip[2], posClip[3]);
+
+    float ndcPosX = posClip[0] / posClip[3];
+    float ndcPosY = posClip[1] / posClip[3];
+    float ndcPosZ = posClip[2] / posClip[3];
+
+    std::cout << std::endl;
+    std::cout << "Position in clip space(note actually OpenGL is going to scale to fit [0,1] range." << std::endl;
+    printf("%7.3f %7.3f %7.3f \n", ndcPosX, ndcPosY, ndcPosZ);
+
+    // Convert NDC.(normalized device coordinate.) to screen coordinates.
+    float screenPosX = (width / 2.0f) * ndcPosX + (width / 2.0f);
+    float screenPosY = -(height / 2.0f) * ndcPosY + (-height / 2.0f) + height;
+
+    std::cout << std::endl;
+    std::cout << "Position in screen." << std::endl;
+    printf("%7.3f %7.3f \n", screenPosX, screenPosY);
+
+    // Convert screen coordinates to NDC.
+    float ndcPosXrecon = (2.0f / width) * screenPosX - 1.0f;
+    float ndcPosYrecon = -(2.0f / height) * screenPosY + 1.0f;
+
+    std::cout << std::endl;
+    std::cout << "Position in NDC." << std::endl;
+    printf("%7.3f %7.3f \n", ndcPosXrecon, ndcPosYrecon );
+
+    // Convert NDC to near plane coordinates.
+    float npPosXrecon = (ndcPosXrecon * (right - left) + right + left) / 2.0f;
+    float npPosYrecon = (ndcPosYrecon * (top - bottom) + top + bottom) / 2.0f;
+    float npPosZrecon = -n;
+
+
+
+    // Determine whether the eye direction intersect with the triangle and 
+    // intersection point is in the triangle.
+
+    Vectorf3 origin{ 0.0f, 0.0f, 0.0f };
+    Vectorf3 direction{ npPosXrecon, npPosYrecon, npPosZrecon };
+    Vectorf3 pointOfIntersection;
+
+    bool ret = isRayIntersectWithPlane(v1, v2, v3, origin, direction, pointOfIntersection);
+
+    std::cout << std::endl;
+    std::cout << "Determine eye direction intersect with triangle." << std::endl;
+
+    if (ret == true) {
+        std::cout << "Eye direction intersect with the triangle." << std::endl;
+    }
+    else {
+        std::cout << "Eye direction DO NOT intersect with the triangle." << std::endl;
+    }
+
+    printf("%7.3f %7.3f %7.3f \n", pointOfIntersection.getX(), pointOfIntersection.getY(), pointOfIntersection.getZ());
+
+
+    ret = isRayIntersectWithPlane(v4, v5, v6, origin, direction, pointOfIntersection);
+
+    std::cout << std::endl;
+    std::cout << "Determine eye direction intersect with triangle." << std::endl;
+
+    if (ret == true) {
+        std::cout << "Eye direction intersect with the triangle." << std::endl;
+    }
+    else {
+        std::cout << "Eye direction DO NOT intersect with the triangle." << std::endl;
+    }
+
+    printf("%7.3f %7.3f %7.3f \n", pointOfIntersection.getX(), pointOfIntersection.getY(), pointOfIntersection.getZ());
+
+
+
+
+
+
+
+
+}
+*/
+
+void test7_2( Vectorf3 origin, Vectorf3 direction, Vectorf3 triangle[3] ) {
+
+    std::cout << "Triangle hit test" << std::endl;
+
+    Vectorf3 pointOfIntersection;
+
+    Vectorf3 v1 = triangle[0];
+    Vectorf3 v2 = triangle[1];
+    Vectorf3 v3 = triangle[2];
+
+    bool ret = isRayIntersectWithPlane(v1, v2, v3, origin, direction, pointOfIntersection);
+
+    std::cout << std::endl;
+    std::cout << "Determine eye direction intersect with triangle." << std::endl;
+
+    if (ret == true) {
+        std::cout << "Eye direction intersect with the triangle." << std::endl;
+    }
+    else {
+        std::cout << "Eye direction DO NOT intersect with the triangle." << std::endl;
+    }
+
+    printf("%7.3f %7.3f %7.3f \n", pointOfIntersection.getX(), pointOfIntersection.getY(), pointOfIntersection.getZ());
+
+}
+
+void test7() {
+
+    Vectorf3 origin{ -23.1379528, 300.000000, 171.331680};
+
+    // Triangle3
+    Vectorf3 v7{ -2.11093211, 8.31966591, 2.11100006 };
+    Vectorf3 v8{ -2.11093211, 0.671500027, 2.11100006 };
+    Vectorf3 v9{ 2.11093211, 8.31966591, 2.11100006 };
+
+    Vectorf3 triangle3[] = { v7, v8, v9 };
+    Vectorf3 posInWorld{ -23.1379528f, 300.000000f, 171.331680f };
+    Vectorf3 direction = posInWorld - origin;
+    direction.normalize();
+
+    test7_2(posInWorld, direction, triangle3 );
+
+
+
+}
+
+void test8() {
+
+
+    // Rotation -38 along y-axis.
+    Matrixf4x4 modelRotMat = GetRotateMatrix4x4(0.0f, 19.98f, 0.0f);
+    Matrixf4x4 modelTransMat = translate2(500.0f, 0.0f, -210.0f );
+
+    Matrixf4x4 eyeRotMat = GetRotateMatrix4x4(0.0f, -15.12f, 0.0f);
+    Matrixf4x4 eyeTransMat = translate2(-360.0f, 0.0f, 125.0f );
+    Matrixf4x4 eyeRotMatRev = GetRotateMatrix4x4(-0.0f, +15.12f, -0.0f);
+    Matrixf4x4 eyeTransMatRev = translate2(+360.0f, -0.0f, -125.0f );
+
+    Vectorf4 Pm{ -160.0f, 0.0f, -155.0f, 1.0f };
+
+//    Vectorf4 Pe = Pm * modelRotMat* modelTransMat* eyeTransMatRev* eyeRotMatRev;
+    Vectorf4 Pw = Pm * modelRotMat * modelTransMat;
+    Vectorf4 Pe = Pw * eyeTransMatRev * eyeRotMatRev;
+    Vectorf4 Pe2 = Pm * modelRotMat * modelTransMat * eyeTransMatRev * eyeRotMatRev;
+
+    printf("%7.3f %7.3f %7.3f \n", Pm[0], Pm[1], Pm[2]);
+    printf("%7.3f %7.3f %7.3f \n", Pw[0], Pw[1], Pw[2]);
+    printf("%7.3f %7.3f %7.3f \n", Pe[0], Pe[1], Pe[2]);
+    printf("%7.3f %7.3f %7.3f \n", Pe2[0], Pe2[1], Pe2[2]);
+
+
+
+
+    return;
+
+
+
+
+}
+
+Matrixf3x3 GetRotateMatrix3x3() {
+
+    // Rotate about x-axis.
+    Matrixf3x3 rotateAboutXMatriX = rotate3x3(1.0f, 0.0f, 0.0f, 0 * (PI / 180.0f));
+
+    // Rotate about y-axis.
+    Matrixf3x3 rotateAboutYMatriY = rotate3x3(0.0f, 1.0f, 0.0f, 30.0f * (PI / 180.0f));
+
+    // Rotate about z-axis.
+    Matrixf3x3 rotateAboutZMatriZ = rotate3x3(0.0f, 0.0f, 1.0f, 0 * (PI / 180.0f));
+
+    // Combine all.
+    Matrixf3x3 rotateMatrix = rotateAboutZMatriZ * rotateAboutYMatriY * rotateAboutXMatriX;
+
+    return rotateMatrix;
+}
+
+void test9() {
+
+    Matrixf3x3 rotMat = GetRotateMatrix3x3();
+
+    Vectorf3 pos{ 0.0f, 0.0f, -10.0f };
+
+    float xInW = pos * rotMat[0];
+    float yInW = pos * rotMat[1];
+    float zInW = pos * rotMat[2];
+
+    printf("%7.3f %7.3f %7.3f \n", xInW, yInW, zInW );
+
+
+    return;
+
+
+
+}
+
+void quaternion_test() {
+
+    std::cout << "Start testing on quaternion functions." << std::endl;
+
+    Vectorf3 v1{ 10.0f, 0.0f, 0.0f };
+    Vectorf3 v2{ -10.0f, 0.0f, 0.0f };
+
+    for ( float i = 0.0f; i < 1.0f; i = i + 0.1f ) {
+
+        Quaternionf q1 = { v1 };
+        Quaternionf q2 = { v2 };
+
+        q1.slerp(q2, i);
+
+        Vectorf3 vResult = q1;
+        printf("%7.3f %7.3f %7.3f \n", vResult.getX(), vResult.getY(), vResult.getZ() );
+
+
+    }
+
+
+}
+
+void conversion_test_EulerAnglesAndMatrix() {
+
+    std::cout << "Start testing on conversion functions between Euler angles and matrix." << std::endl;
+
+    float EulerAngles[][3] = { 
+        {   0.0f, 0.0f, 0.0f },
+        {  10.0f, 0.0f, 0.0f },
+        {  20.0f, 0.0f, 0.0f },
+        {  30.0f, 0.0f, 0.0f },
+        {  40.0f, 0.0f, 0.0f },
+        {  50.0f, 0.0f, 0.0f },
+        {  60.0f, 0.0f, 0.0f },
+        {  70.0f, 0.0f, 0.0f },
+        {  80.0f, 0.0f, 0.0f },
+        {  90.0f, 0.0f, 0.0f },
+        { 100.0f, 0.0f, 0.0f },
+        { 110.0f, 0.0f, 0.0f },
+        { 120.0f, 0.0f, 0.0f },
+        { 130.0f, 0.0f, 0.0f },
+        { 140.0f, 0.0f, 0.0f },
+        { 150.0f, 0.0f, 0.0f },
+        { 160.0f, 0.0f, 0.0f },
+        { 170.0f, 0.0f, 0.0f },
+        { 180.0f, 0.0f, 0.0f },
+
+        {   0.0f,   0.0f, 0.0f },
+        {   0.0f,  10.0f, 0.0f },
+        {   0.0f,  20.0f, 0.0f },
+        {   0.0f,  30.0f, 0.0f },
+        {   0.0f,  40.0f, 0.0f },
+        {   0.0f,  50.0f, 0.0f },
+        {   0.0f,  60.0f, 0.0f },
+        {   0.0f,  70.0f, 0.0f },
+        {   0.0f,  80.0f, 0.0f },
+        {   0.0f,  90.0f, 0.0f },
+        {   0.0f, 100.0f, 0.0f },
+        {   0.0f, 110.0f, 0.0f },
+        {   0.0f, 120.0f, 0.0f },
+        {   0.0f, 130.0f, 0.0f },
+        {   0.0f, 140.0f, 0.0f },
+        {   0.0f, 150.0f, 0.0f },
+        {   0.0f, 160.0f, 0.0f },
+        {   0.0f, 170.0f, 0.0f },
+        {   0.0f, 180.0f, 0.0f },
+
+        {   0.0f, 0.0f,   0.0f },
+        {   0.0f, 0.0f,  10.0f },
+        {   0.0f, 0.0f,  20.0f },
+        {   0.0f, 0.0f,  30.0f },
+        {   0.0f, 0.0f,  40.0f },
+        {   0.0f, 0.0f,  50.0f },
+        {   0.0f, 0.0f,  60.0f },
+        {   0.0f, 0.0f,  70.0f },
+        {   0.0f, 0.0f,  80.0f },
+        {   0.0f, 0.0f,  90.0f },
+        {   0.0f, 0.0f, 100.0f },
+        {   0.0f, 0.0f, 110.0f },
+        {   0.0f, 0.0f, 120.0f },
+        {   0.0f, 0.0f, 130.0f },
+        {   0.0f, 0.0f, 140.0f },
+        {   0.0f, 0.0f, 150.0f },
+        {   0.0f, 0.0f, 160.0f },
+        {   0.0f, 0.0f, 170.0f },
+        {   0.0f, 0.0f, 180.0f },
+
+        {   0.0f, 150.0f, 0.0f },
+        {  10.0f,  20.0f, 0.0f },
+        {  20.0f,  30.0f, 0.0f },
+        {  30.0f,  50.0f, 0.0f },
+        {  40.0f, 170.0f, 0.0f },
+        {  50.0f,   0.0f, 0.0f },
+        {  60.0f, 120.0f, 0.0f },
+        {  70.0f, 130.0f, 0.0f },
+        {  80.0f,  10.0f, 0.0f },
+        {  90.0f, 110.0f, 0.0f },
+        { 100.0f, 140.0f, 0.0f },
+        { 110.0f,  60.0f, 0.0f },
+        { 120.0f,  70.0f, 0.0f },
+        { 130.0f, 180.0f, 0.0f },
+        { 140.0f, 100.0f, 0.0f },
+        { 150.0f,  80.0f, 0.0f },
+        { 160.0f,  90.0f, 0.0f },
+        { 170.0f, 160.0f, 0.0f },
+        { 180.0f,  40.0f, 0.0f },
+
+        { 150.0f,   0.0f, 0.0f },
+        {  20.0f,  10.0f, 0.0f },
+        {  30.0f,  20.0f, 0.0f },
+        {  50.0f,  30.0f, 0.0f },
+        { 170.0f,  40.0f, 0.0f },
+        {   0.0f,  50.0f, 0.0f },
+        { 120.0f,  60.0f, 0.0f },
+        { 130.0f,  70.0f, 0.0f },
+        {  10.0f,  80.0f, 0.0f },
+        { 110.0f,  90.0f, 0.0f },
+        { 140.0f, 100.0f, 0.0f },
+        {  60.0f, 110.0f, 0.0f },
+        {  70.0f, 120.0f, 0.0f },
+        { 180.0f, 130.0f, 0.0f },
+        { 100.0f, 140.0f, 0.0f },
+        {  80.0f, 150.0f, 0.0f },
+        {  90.0f, 160.0f, 0.0f },
+        { 160.0f, 170.0f, 0.0f },
+        {  40.0f, 180.0f, 0.0f },
+
+        { 150.0f, 0.0f,   0.0f },
+        { 20.0f, 0.0f,  10.0f },
+        { 30.0f, 0.0f,  20.0f },
+        { 50.0f, 0.0f,  30.0f },
+        { 170.0f, 0.0f,  40.0f },
+        { 0.0f, 0.0f,  50.0f },
+        { 120.0f, 0.0f,  60.0f },
+        { 130.0f, 0.0f,  70.0f },
+        { 10.0f, 0.0f,  80.0f },
+        { 110.0f, 0.0f,  90.0f },
+        { 140.0f, 0.0f, 100.0f },
+        { 60.0f, 0.0f, 110.0f },
+        { 70.0f, 0.0f, 120.0f },
+        { 180.0f, 0.0f, 130.0f },
+        { 100.0f, 0.0f, 140.0f },
+        { 80.0f, 0.0f, 150.0f },
+        { 90.0f, 0.0f, 160.0f },
+        { 160.0f, 0.0f, 170.0f },
+        { 40.0f, 0.0f, 180.0f },
+
+        { 0.0f, 150.0f,   0.0f },
+        { 0.0f,  20.0f,  10.0f },
+        { 0.0f,  30.0f,  20.0f },
+        { 0.0f,  50.0f,  30.0f },
+        { 0.0f, 170.0f,  40.0f },
+        { 0.0f,   0.0f,  50.0f },
+        { 0.0f, 120.0f,  60.0f },
+        { 0.0f, 130.0f,  70.0f },
+        { 0.0f,  10.0f,  80.0f },
+        { 0.0f, 110.0f,  90.0f },
+        { 0.0f, 140.0f, 100.0f },
+        { 0.0f,  60.0f, 110.0f },
+        { 0.0f,  70.0f, 120.0f },
+        { 0.0f, 180.0f, 130.0f },
+        { 0.0f, 100.0f, 140.0f },
+        { 0.0f,  80.0f, 150.0f },
+        { 0.0f,  90.0f, 160.0f },
+        { 0.0f, 160.0f, 170.0f },
+        { 0.0f,  40.0f, 180.0f },
+
+        { 140.0f, 150.0f,   0.0f },
+        { 60.0f,  20.0f,  10.0f },
+        { 70.0f,  30.0f,  20.0f },
+        { 180.0f,  50.0f,  30.0f },
+        { 120.0f, 170.0f,  40.0f },
+        { 130.0f,   0.0f,  50.0f },
+        { 10.0f, 120.0f,  60.0f },
+        { 110.0f, 130.0f,  70.0f },
+        { 100.0f,  10.0f,  80.0f },
+        { 80.0f, 110.0f,  90.0f },
+        { 90.0f, 140.0f, 100.0f },
+        { 160.0f,  60.0f, 110.0f },
+        { 40.0f,  70.0f, 120.0f },
+        { 150.0f, 180.0f, 130.0f },
+        { 20.0f, 100.0f, 140.0f },
+        { 30.0f,  80.0f, 150.0f },
+        { 50.0f,  90.0f, 160.0f },
+        { 170.0f, 160.0f, 170.0f },
+        { 0.0f,  40.0f, 180.0f },
+    };
+
+    for (int i = 0; i < sizeof(EulerAngles) / sizeof(float[3]); i++) {
+
+        float heading = EulerAngles[i][0];
+        float pitch = EulerAngles[i][1];
+        float bank = EulerAngles[i][2];
+
+        Matrixf3x3 m{ heading, pitch, bank };
+
+        float heading_ret, pitch_ret, bank_ret;
+        m.GetEulerAngles(heading_ret, pitch_ret, bank_ret);
+
+        printf("%d\n", i);
+        printf("%7.3f %7.3f %7.3f \n", heading, pitch, bank);
+        printf("%7.3f %7.3f %7.3f \n", heading_ret, pitch_ret, bank_ret );
+
+    }
+
+
+
+}
+
+void conversion_test_QuaternionAndMatrix() {
+
+    std::cout << "Start testing on conversion functions between quaternion and matrix." << std::endl;
+
+    typedef struct strQuaternionTest {
+
+        float theta;
+        Vectorf3 normal;
+
+    }QuaternionTest;
+
+    Vectorf3 normalxy{ 1.0f, 1.0f, 0.0f };
+    normalxy.normalize();
+
+    Vectorf3 normalyz{ 0.0f, 1.0f, 1.0f };
+    normalyz.normalize();
+
+    Vectorf3 normalxz{ 1.0f, 0.0f, 1.0f };
+    normalxz.normalize();
+
+
+    QuaternionTest tests[] = {
+        { 10.0f * (PI/180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 20.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 30.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 40.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 50.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 60.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 70.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 80.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 90.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 100.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 110.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 120.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 130.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 140.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 150.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 160.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 170.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+        { 180.0f * (PI / 180.0f), Vectorf3 { 1.0f, 0.0f, 0.0f }},
+
+        { 10.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 20.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 30.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 40.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 50.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 60.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 70.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 80.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 90.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 100.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 110.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 120.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 130.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 140.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 150.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 160.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 170.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+        { 180.0f * (PI / 180.0f), Vectorf3 { 0.0f, 1.0f, 0.0f }},
+
+        { 10.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 20.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 30.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 40.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 50.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 60.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 70.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 80.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 90.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 100.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 110.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 120.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 130.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 140.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 150.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 160.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 170.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+        { 180.0f * (PI / 180.0f), Vectorf3 { 0.0f, 0.0f, 1.0f }},
+
+        { 10.0f * (PI / 180.0f), normalxy},
+        { 20.0f * (PI / 180.0f), normalxy},
+        { 30.0f * (PI / 180.0f), normalxy},
+        { 40.0f * (PI / 180.0f), normalxy},
+        { 50.0f * (PI / 180.0f), normalxy},
+        { 60.0f * (PI / 180.0f), normalxy},
+        { 70.0f * (PI / 180.0f), normalxy},
+        { 80.0f * (PI / 180.0f), normalxy},
+        { 90.0f * (PI / 180.0f), normalxy},
+        { 100.0f * (PI / 180.0f), normalxy},
+        { 110.0f * (PI / 180.0f), normalxy},
+        { 120.0f * (PI / 180.0f), normalxy},
+        { 130.0f * (PI / 180.0f), normalxy},
+        { 140.0f * (PI / 180.0f), normalxy},
+        { 150.0f * (PI / 180.0f), normalxy},
+        { 160.0f * (PI / 180.0f), normalxy},
+        { 170.0f * (PI / 180.0f), normalxy},
+        { 180.0f * (PI / 180.0f), normalxy},
+
+        { 10.0f * (PI / 180.0f), normalyz},
+        { 20.0f * (PI / 180.0f), normalyz},
+        { 30.0f * (PI / 180.0f), normalyz},
+        { 40.0f * (PI / 180.0f), normalyz},
+        { 50.0f * (PI / 180.0f), normalyz},
+        { 60.0f * (PI / 180.0f), normalyz},
+        { 70.0f * (PI / 180.0f), normalyz},
+        { 80.0f * (PI / 180.0f), normalyz},
+        { 90.0f * (PI / 180.0f), normalyz},
+        { 100.0f * (PI / 180.0f), normalyz},
+        { 110.0f * (PI / 180.0f), normalyz},
+        { 120.0f * (PI / 180.0f), normalyz},
+        { 130.0f * (PI / 180.0f), normalyz},
+        { 140.0f * (PI / 180.0f), normalyz},
+        { 150.0f * (PI / 180.0f), normalyz},
+        { 160.0f * (PI / 180.0f), normalyz},
+        { 170.0f * (PI / 180.0f), normalyz},
+        { 180.0f * (PI / 180.0f), normalyz},
+
+        { 10.0f * (PI / 180.0f), normalxz},
+        { 20.0f * (PI / 180.0f), normalxz},
+        { 30.0f * (PI / 180.0f), normalxz},
+        { 40.0f * (PI / 180.0f), normalxz},
+        { 50.0f * (PI / 180.0f), normalxz},
+        { 60.0f * (PI / 180.0f), normalxz},
+        { 70.0f * (PI / 180.0f), normalxz},
+        { 80.0f * (PI / 180.0f), normalxz},
+        { 90.0f * (PI / 180.0f), normalxz},
+        { 100.0f * (PI / 180.0f), normalxz},
+        { 110.0f * (PI / 180.0f), normalxz},
+        { 120.0f * (PI / 180.0f), normalxz},
+        { 130.0f * (PI / 180.0f), normalxz},
+        { 140.0f * (PI / 180.0f), normalxz},
+        { 150.0f * (PI / 180.0f), normalxz},
+        { 160.0f * (PI / 180.0f), normalxz},
+        { 170.0f * (PI / 180.0f), normalxz},
+        { 180.0f * (PI / 180.0f), normalxz},
+    };
+
+    for (int i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+
+        float theta = tests[i].theta;
+        Vectorf3 normal = tests[i].normal;
+
+        Quaternionf q{ cos(theta / 2), sin(theta / 2) * normal };
+
+        Matrixf3x3 rotMat = q;
+        Matrixf3x3 rotMat_ans = rotate3x3( normal[0], normal[1], normal[2], theta );
+
+        float x, y, z;
+        rotMat.GetEulerAngles(x, y, z);
+
+        float x2, y2, z2;
+        rotMat_ans.GetEulerAngles(x2, y2, z2);
+
+        printf("%d\n", i);
+        printf("%7.3f %7.3f %7.3f \n", x, y, z);
+        printf("%7.3f %7.3f %7.3f \n", x2, y2, z2);
+
+    }
+
+
+
+
+
+    return;
+}
+
 int main()
 {
-    test1();
-    test2();
-    test3();
-    test4();
-    test4_2();
-    test5();
-    test6();
+//    test1();
+ //   test2();
+//    test3();
+//    test4();
+//    test4_2();
+//    test5();
+//    test6();
+    test7();
+//    test8();
+//    test9();
+    quaternion_test();
+    conversion_test_EulerAnglesAndMatrix();
+    conversion_test_QuaternionAndMatrix();
 
     std::cout << "Hello World!\n";
 }

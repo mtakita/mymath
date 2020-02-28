@@ -1,9 +1,11 @@
 #pragma once
 
-#ifndef _MYMATH_
-#define _MYMATH_
+#ifndef _MYMATH_H_
+#define _MYMATH_H_
 
-#include <math.h>
+#include "math.h"
+
+#define PI 3.141592654f
 
 namespace mymath {
 
@@ -16,13 +18,13 @@ namespace mymath {
 				data[i] = 0;
 			}
 		}
-
-		VectorN(T v) {
-			for (int i = 0; i < len; i++) {
-				data[i] = v;
-			}
-		}
-
+		/*
+				VectorN(T v) {
+					for (int i = 0; i < len; i++) {
+						data[i] = v;
+					}
+				}
+		*/
 		VectorN(const VectorN& vectorN) {
 			assign(vectorN);
 		}
@@ -132,12 +134,17 @@ namespace mymath {
 		}
 
 		T abs() {
-			return sqrt((*this) * (*this));
+			return static_cast<T>(sqrt((*this) * (*this)));
 		}
 
 		VectorN normalize() {
 			T t = abs();
-			return (*this) / t;
+			if (t == 0.0f) {
+				return (*this);
+			}
+
+			(*this) = (*this) / t;
+			return (*this);
 		}
 
 	protected:
@@ -192,18 +199,19 @@ namespace mymath {
 		void setX(const T& v) { base::data[0] = v; }
 		void setY(const T& v) { base::data[1] = v; }
 		void setZ(const T& v) { base::data[2] = v; }
+		/*
+				// Duplicate.
+				const Vector3 cross(const Vector3& that) {
 
-		// Duplicate.  
-		const Vector3 cross(const Vector3& that) {
+					Vector3 ret = {
+						base::data[1] * that.data[2] - base::data[2] * that.data[1],
+						base::data[2] * that.data[0] - base::data[0] * that.data[2],
+						base::data[0] * that.data[1] - base::data[1] * that.data[0],
+					};
 
-			Vector3 ret = {
-				base::data[1] * that.data[2] - base::data[2] * that.data[1],
-				base::data[2] * that.data[0] - base::data[0] * that.data[2],
-				base::data[0] * that.data[1] - base::data[1] * that.data[0],
-			};
-
-			return ret;
-		}
+					return ret;
+				}
+		*/
 	};
 
 	typedef Vector3<float> Vectorf3;
@@ -244,9 +252,16 @@ namespace mymath {
 
 			T w = base::data[3];
 
-			Vectorf3 ret = { base::data[0] / w, base::data[1] / w, base::data[2] / w };
+			if (w != 0.0f) {
 
-			return ret;
+				Vectorf3 ret = { base::data[0] / w, base::data[1] / w, base::data[2] / w };
+				return ret;
+			}
+			else {
+
+				Vectorf3 ret = { base::data[0] , base::data[1] , base::data[2] };
+				return ret;
+			}
 		}
 	};
 
@@ -297,8 +312,9 @@ namespace mymath {
 		typedef class VectorN<T, h> vector_type;
 
 		MatrixNM() {
+			vector_type zero;
 			for (int i = 0; i < h; i++) {
-				data[i] = vector_type{ 0 };
+				data[i] = zero;
 			}
 			/*
 						for (int i = 0; i < w; i++) {
@@ -359,11 +375,74 @@ namespace mymath {
 			base::data[2] = r;
 		}
 
-		void identity() {
-			base::data[0] = { 1, 0, 0 };
-			base::data[1] = { 0, 1, 0 };
-			base::data[2] = { 0, 0, 1 };
+		
+		Matrix3x3( T hInDegree, T pInDegree, T bInDegree){
 
+			T h, p, b;
+			h = hInDegree * (PI / 180);
+			p = pInDegree * (PI / 180);
+			b = bInDegree * (PI / 180);
+
+			Vector3<T> vP{ cos(h)*cos(b)+sin(h)*sin(p)*sin(b)  , sin(b)*cos(p) , -sin(h)*cos(b)+ cos(h)*sin(p)*sin(b) };
+			Vector3<T> vQ{ -cos(h)*cos(b)+ sin(h)*sin(p)*cos(b), cos(b)*cos(p) , sin(b)*sin(h)+ cos(h)*sin(p)*cos(b)  };
+			Vector3<T> VR{ sin(h)*cos(p)                       , -sin(p)       ,     cos(h)*cos(p)                    };
+
+			(*this)[0] = vP;
+			(*this)[1] = vQ;
+			(*this)[2] = VR;
+		}
+
+		void GetEulerAngles( T& hInDegree, T& pInDegree, T& bInDegree) {
+
+			T h, p, b;
+
+			p = asin( -(*this)[2][1] );
+
+			if ( p >= (PI / 2.0f) || p <= -(PI / 2.0f) ) {
+
+				h = atan2(-(*this)[0][2], (*this)[0][0]);
+				b = 0.0f;
+			}
+			else {
+				h = atan2((*this)[2][0], (*this)[2][2]);
+				b = atan2((*this)[0][1], (*this)[1][1]);
+			}
+
+			hInDegree = h * (180 / PI);
+			pInDegree = p * (180 / PI);
+			bInDegree = b * (180 / PI);
+
+			//
+			// Slightly adjust the value to fit the gap between canonical angles and the range of atan2() which
+			// returns the range from -180 to +180.  -180 is not included in the canonical angles.
+			// This returns +180 instead of -180.
+
+			if (hInDegree <= -179.9999f) {
+				hInDegree *= -1.0f;
+			}
+
+			if (bInDegree <= -179.9999f) {
+				bInDegree *= -1.0f;
+			}
+
+		}
+
+		void identity() {
+			/*			base::data[0] = { 1, 0, 0 };
+						base::data[1] = { 0, 1, 0 };
+						base::data[2] = { 0, 0, 1 };
+			*/
+			base::data[0][0] = 1.0f;
+			base::data[0][1] = 0.0f;
+			base::data[0][2] = 0.0f;
+
+			base::data[1][0] = 0.0f;
+			base::data[1][1] = 1.0f;
+			base::data[1][2] = 0.0f;
+
+			base::data[2][0] = 0.0f;
+			base::data[2][1] = 0.0f;
+			base::data[2][2] = 1.0f;
 		}
 
 		base::vector_type& operator[](const int w) {
@@ -517,9 +596,9 @@ namespace mymath {
 			return ret;
 		}
 
-		Matrix4x4 orthogonilize() const {
+		Matrix4x4<T> orthogonilize() const {
 
-			Matrix4x4 orth = *this;
+			Matrix4x4<T> orth = *this;
 
 			// orth[0] = orth[0] 1st row will be the same as before.
 
@@ -538,9 +617,9 @@ namespace mymath {
 			return orth;
 		}
 
-		Matrix4x4 transpose() {
+		Matrix4x4<T> transpose() {
 
-			Matrix4x4 trans = *this;
+			Matrix4x4<T> trans = *this;
 
 			for (int j = 0; j < 4; j++) {
 				for (int i = 0; i < 4; i++) {
@@ -551,9 +630,9 @@ namespace mymath {
 			return trans;
 		}
 
-		Matrix4x4 normalize() {
+		Matrix4x4<T> normalize() {
 
-			Matrix4x4 norm;
+			Matrix4x4<T> norm;
 
 			for (int i = 0; i < 4; i++) {
 				norm[i] = (*this)[i].normalize();
@@ -561,6 +640,14 @@ namespace mymath {
 
 			return norm;
 
+		}
+
+		Matrix4x4<T> identityNegateZAxis() {
+
+			identity();
+			(*this)[2][2] = -1.0f;
+
+			return (*this);
 		}
 
 	};
@@ -599,6 +686,21 @@ namespace mymath {
 	}
 */
 
+	static Vector3<float> operator*(const Vector3<float>& inThis, const Matrixf3x3& inThat) {
+		Vector3<float> ret;
+
+		Vector3<float> myThis = inThis;
+		Matrixf3x3 myThat = inThat;
+		for (int i = 0; i < 3; i++) {
+			for (int k = 0; k < 3; k++) {
+				ret[i] += myThis[k] * myThat[k][i];
+			}
+		}
+
+		return ret;
+	}
+
+
 	static Vector4<float> operator*(const Vector4<float>& inThis, const Matrixf4x4& inThat) {
 		Vector4<float> ret;
 
@@ -613,23 +715,6 @@ namespace mymath {
 		return ret;
 	}
 
-	static Matrixf4x4 frustum(float left, float right, float bottom, float top, float n, float f)
-	{
-		Matrixf4x4 perspectiveTransform;
-
-		perspectiveTransform[0][0] = (2.0f * n) / (right - left);
-
-		perspectiveTransform[1][1] = (2.0f * n) / (top - bottom);
-
-		perspectiveTransform[2][0] = (right + left) / (right - left);
-		perspectiveTransform[2][1] = (top + bottom) / (top - bottom);
-		perspectiveTransform[2][2] = -(f + n) / (f - n);
-		perspectiveTransform[2][3] = -1.0f;
-
-		perspectiveTransform[3][2] = -(2.0f * f * n) / (f - n);
-
-		return perspectiveTransform;
-	}
 	/*
 		static Matrixf4x4 frustum(float zoomX, float zoomY, float left, float right, float bottom, float top, float n, float f)
 		{
@@ -649,56 +734,413 @@ namespace mymath {
 			return perspectiveTransform;
 		}
 	*/
+	/*
+	static Matrixf4x4 frustum(float zoomX, float zoomY, float left, float right, float bottom, float top, float n, float f)
+	{
+
+		Matrixf4x4 zoomMat;
+		zoomMat.identity();
+		zoomMat[0][0] = zoomX;
+		zoomMat[1][1] = zoomY;
+
+		Matrixf4x4 perspectiveTransform;
+
+		perspectiveTransform[0][0] = ((2.0f * n) / (right - left));
+
+		perspectiveTransform[1][1] = ((2.0f * n) / (top - bottom));
+
+		perspectiveTransform[2][0] = ((right + left) / (right - left));
+		perspectiveTransform[2][1] = ((top + bottom) / (top - bottom));
+
+		perspectiveTransform[2][2] = -(f + n) / (f - n);
+		perspectiveTransform[2][3] = -1.0f;
+
+		perspectiveTransform[3][2] = (-2.0f * f * n) / (f - n);
+
+		return zoomMat * perspectiveTransform;
+	}
+	*/
+
+	static Matrixf4x4 frustum_nozoom(float zoomX, float zoomY, float left, float right, float bottom, float top, float n, float f)
+	{
+		Matrixf4x4 perspectiveTransform;
+
+		perspectiveTransform[0][0] = ((2.0f * n) / (right - left));
+
+		perspectiveTransform[1][1] = ((2.0f * n) / (top - bottom));
+
+		perspectiveTransform[2][0] = ((right + left) / (right - left));
+		perspectiveTransform[2][1] = ((top + bottom) / (top - bottom));
+
+		perspectiveTransform[2][2] = -(f + n) / (f - n);
+		perspectiveTransform[2][3] = -1.0f;
+
+		perspectiveTransform[3][2] = (-2.0f * f * n) / (f - n);
+
+		return perspectiveTransform;
+	}
+
+	/*
+	// Text version of frustum with zooming calculation for x and y.( not for z )
 	static Matrixf4x4 frustum(float zoomX, float zoomY, float left, float right, float bottom, float top, float n, float f)
 	{
 		Matrixf4x4 perspectiveTransform;
 
 		perspectiveTransform[0][0] = zoomX * ((2.0f * n) / (right - left));
+//		perspectiveTransform[0][0] = ((2.0f * n) / (right - left));
 
 		perspectiveTransform[1][1] = zoomY * ((2.0f * n) / (top - bottom));
+//		perspectiveTransform[1][1] = ((2.0f * n) / (top - bottom));
 
-		perspectiveTransform[2][0] = zoomX * (-(left + right) / (right - left));
-		perspectiveTransform[2][1] = zoomY * (-(bottom + top) / (top - bottom));
-		perspectiveTransform[2][2] = f / (n - f);
+//		perspectiveTransform[2][0] = zoomX * ((right + left) / (right - left));
+//		perspectiveTransform[2][1] = zoomY * ((top + bottom) / (top - bottom));
+		perspectiveTransform[2][0] = ((right + left) / (right - left));
+		perspectiveTransform[2][1] = ((top + bottom) / (top - bottom));
+
+		perspectiveTransform[2][2] = -(f + n) / (f - n);
 		perspectiveTransform[2][3] = -1.0f;
 
-		perspectiveTransform[3][2] = -(n * f) / (n - f);
+		perspectiveTransform[3][2] = (-2.0f * f * n) / (f - n);
 
 		return perspectiveTransform;
 	}
+*/
+/*
+	// Text version of frustum without zooming calculation.
+	static Matrixf4x4 frustum2(float left, float right, float bottom, float top, float n, float f)
+	{
+		Matrixf4x4 perspectiveTransform;
 
+		perspectiveTransform[0][0] = ((2.0f * n) / (right - left));
+
+		perspectiveTransform[1][1] = ((2.0f * n) / (top - bottom));
+
+		perspectiveTransform[2][0] = ((right + left) / (right - left));
+		perspectiveTransform[2][1] = ((top + bottom) / (top - bottom));
+		perspectiveTransform[2][2] = -(f + n) / (f - n);
+		perspectiveTransform[2][3] = -1.0f;
+
+		perspectiveTransform[3][2] = (-2.0f * f * n) / (f - n);
+
+		return perspectiveTransform;
+	}
+*/
 	static Matrixf4x4 rotate(float normal_x, float normal_y, float normal_z, float theta)
 	{
 		Matrixf4x4 rotationTransform;
 		rotationTransform.identity();
 
-		rotationTransform[0][0] = pow(normal_x, 2) * (1 - cos(theta)) + cos(theta);
-		rotationTransform[0][1] = normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta);
-		rotationTransform[0][2] = normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta);
+		rotationTransform[0][0] = static_cast<float>(pow(normal_x, 2) * (1 - cos(theta)) + cos(theta));
+		rotationTransform[0][1] = static_cast<float>(normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta));
+		rotationTransform[0][2] = static_cast<float>(normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta));
 
-		rotationTransform[1][0] = normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta);
-		rotationTransform[1][1] = pow(normal_y, 2) * (1 - cos(theta)) + cos(theta);
-		rotationTransform[1][2] = normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta);
+		rotationTransform[1][0] = static_cast<float>(normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta));
+		rotationTransform[1][1] = static_cast<float>(pow(normal_y, 2) * (1 - cos(theta)) + cos(theta));
+		rotationTransform[1][2] = static_cast<float>(normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta));
 
-		rotationTransform[2][0] = normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta);
-		rotationTransform[2][1] = normal_y * normal_x * (1 - cos(theta)) - normal_x * sin(theta);
-		rotationTransform[2][2] = pow(normal_z, 2) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[2][0] = static_cast<float>(normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta));
+		rotationTransform[2][1] = static_cast<float>(normal_y * normal_x * (1 - cos(theta)) - normal_x * sin(theta));
+		rotationTransform[2][2] = static_cast<float>(pow(normal_z, 2) * (1 - cos(theta)) + cos(theta));
 
 		return rotationTransform;
 	}
 
+	static Matrixf3x3 rotate3x3(float normal_x, float normal_y, float normal_z, float theta)
+	{
+		Matrixf3x3 rotationTransform;
+		rotationTransform.identity();
+
+		rotationTransform[0][0] = powf(normal_x, 2.0f) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[0][1] = normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta);
+		rotationTransform[0][2] = normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta);
+
+		rotationTransform[1][0] = normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta);
+		rotationTransform[1][1] = powf(normal_y, 2.0f) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[1][2] = normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta);
+
+		rotationTransform[2][0] = normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta);
+		rotationTransform[2][1] = normal_y * normal_z * (1 - cos(theta)) - normal_x * sin(theta);
+		rotationTransform[2][2] = powf(normal_z, 2.0f) * (1 - cos(theta)) + cos(theta);
+
+		return rotationTransform;
+	}
+	/*
+		// Note that each coordinate will be negated before calculation for convenience.
+		static Matrixf4x4 translate(float move_x, float move_y, float move_z)
+		{
+			Matrixf4x4 transltionTransform;
+			transltionTransform.identity();
+
+			transltionTransform[3][0] = -move_x;
+			transltionTransform[3][1] = -move_y;
+			transltionTransform[3][2] = -move_z;
+
+			return transltionTransform;
+		}
+	*/
+
 	// Note that each coordinate will be negated before calculation for convenience.
-	static Matrixf4x4 translate(float normal_x, float normal_y, float normal_z)
+	static Matrixf4x4 translate2(float move_x, float move_y, float move_z)
 	{
 		Matrixf4x4 transltionTransform;
 		transltionTransform.identity();
 
-		transltionTransform[3][0] = -normal_x;
-		transltionTransform[3][1] = -normal_y;
-		transltionTransform[3][2] = -normal_z;
+		transltionTransform[3][0] = move_x;
+		transltionTransform[3][1] = move_y;
+		transltionTransform[3][2] = move_z;
 
 		return transltionTransform;
 	}
+
+
+	// Scaling
+	static Matrixf4x4 scale(float nX, float nY, float nZ, float k)
+	{
+		Matrixf4x4 scalingTransform;
+		scalingTransform.identity();
+
+		scalingTransform[0][0] = static_cast<float>(pow(nX, 2.0f) * (k - 1.0f) + 1.0f);
+		scalingTransform[0][1] = static_cast<float>(nX * nY * (k - 1.0f));
+		scalingTransform[0][2] = static_cast<float>(nX * nZ * (k - 1.0f));
+
+		scalingTransform[1][0] = static_cast<float>(nY * nX * (k - 1.0f));
+		scalingTransform[1][1] = static_cast<float>(pow(nY, 2.0f) * (k - 1.0f) + 1.0f);
+		scalingTransform[1][2] = static_cast<float>(nY * nZ * (k - 1.0f));
+
+		scalingTransform[2][0] = static_cast<float>(nZ * nX * (k - 1.0f));
+		scalingTransform[2][1] = static_cast<float>(nZ * nY * (k - 1.0f));
+		scalingTransform[2][2] = static_cast<float>(pow(nZ, 2.0f) * (k - 1.0f) + 1.0f);
+
+		return scalingTransform;
+	}
+
+	// Scaling
+	static Matrixf4x4 scale(float k)
+	{
+		Matrixf4x4 scalingTransform;
+		scalingTransform.identity();
+
+		scalingTransform[0][0] = k;
+		scalingTransform[1][1] = k;
+		scalingTransform[2][2] = k;
+
+		return scalingTransform;
+	}
+
+	// Scaling
+	static Matrixf3x3 scale3x3(float k)
+	{
+		Matrixf3x3 scalingTransform;
+		scalingTransform.identity();
+
+		scalingTransform[0][0] = k;
+		scalingTransform[1][1] = k;
+		scalingTransform[2][2] = k;
+
+		return scalingTransform;
+	}
+
+	template < typename T >
+	class Quaternion {
+	public:
+
+		// Quaternion dimension.
+		const static int len = 3;
+
+		Quaternion() {
+			x = 0.0f;
+			y = 0.0f;
+			z = 0.0f;
+			w = 0.0f;
+		}
+
+		Quaternion( T inW, Vectorf3 v ) {
+			x = v[0];
+			y = v[1];
+			z = v[2];
+			this->w = inW;
+		}
+
+		operator Matrixf3x3 () {
+			
+			Vectorf3 p = { 1 - 2* powf(y,2.0f) - 2* powf(z,2.0f), 2*x*y + 2*z*w                        , 2*x*z - 2*y*w                    };
+			Vectorf3 q = { 2*y*x - 2*z*w                    , 1 - 2* powf( x, 2.0f) - 2* powf(z, 2.0f ), 2*y*z + 2*x*w                    };
+			Vectorf3 r = { 2*x*z + 2*y*w                    , 2*z*y - 2*x*w                        , 1 - 2* powf(x,2.0f) - 2* powf(y,2.0f)};
+
+			Matrixf3x3 rotMat{ p, q, r };
+			return rotMat;
+		}
+
+		Quaternion( Vectorf3 v) {
+			x = v[0];
+			y = v[1];
+			z = v[2];
+			this->w = 0.0f;
+		}
+
+		Quaternion(const Quaternion<T>& q ) {
+			assign( q );
+		}
+
+		void assign(const Quaternion<T>& q ) {
+			x = q.x;
+			y = q.y;
+			z = q.z;
+			w = q.w;
+		}
+
+		operator Vectorf3 () {
+
+			Vectorf3 v = { x, y, z };
+			return v;
+		}
+
+		const Quaternion<T> operator*(T v) const {
+
+			Quaternion<T> ret = *this;
+			ret.x *= v;
+			ret.y *= v;
+			ret.z *= v;
+			ret.w *= v;
+
+			return ret;
+		}
+
+		void conjugate() {
+
+			x = -x;
+			y = -y;
+			z = -z;
+
+		}
+
+		void inverse() {
+
+			conjugate();
+			float denom = abs();
+			(*this) = (*this ) / denom;
+
+		}
+
+		const Quaternion<T> product( const Quaternion<T> q2 ) const {
+
+			T w1 = this->w;
+			T w2 = q2.w;
+			Vectorf3 v1 { this->x, this->y, this->z };
+			Vectorf3 v2 { q2.x, q2.y, q2.z };
+
+			T newW = w1 * w2 - v1 * v2;
+			Vectorf3 newV = w1 * v2 + w2 * v1 + v1.cross(v2);
+
+			Quaternion<T> newQ{ newW, newV };
+
+			return newQ;
+		}
+
+		T rotate(Vectorf3 p) {
+			
+			Quaternion<T> p{ 0, p[0], p[1], p[2] };
+			Quaternion<T> qInversed = this->inverse();
+
+			Quaternion<T> newP = (*this).product( p ).product( qInversed );
+
+			return newP;
+		}
+
+		T difference( Quaternion<T> b ) {
+
+			Quaternion<T> aInversed = this->inverse();
+			Quaternion<T> qDifference = b.product(aInversed);
+
+			return qDifference;
+		}
+/*
+		T& operator[](const int h) {
+			return data[h];
+		}
+*/
+		const Quaternion<T> operator/(T d) {
+
+			Quaternion<T> q = (*this);
+
+			q.w = q.w / d;
+			q.x = q.x / d;
+			q.y = q.y / d;
+			q.z = q.z / d;
+
+			return q;
+		}
+
+		// Dot Product
+		T operator*( const Quaternion<T>& that) {
+
+			T ret = w * that.w + x * that.x + y * that.y + z * that.z;
+			return ret;
+		}
+
+		void log() {
+
+			Vectorf3 normal{ this->x, this->y, this->z };
+			normal.normalize();
+
+			T alpha = asin(x / normal.getX());
+
+			Vectorf3 v{ alpha * normal };
+
+			w = 0.0f;
+			x = v.getX();
+			y = v.getY();
+			z = v.getZ();
+		}
+
+		// exponential
+		void exp() {
+
+			Vectorf3 normal{ this->x, this->y, this->z };
+			normal.normalize();
+
+			T alpha = x / normal.getX();
+			Vectorf3 v{ normal * sin(alpha) };
+
+			w = alpha;
+			x = v.getX();
+			y = v.getY();
+			z = v.getZ();
+
+		}
+
+		// exponentiation.
+		void pow(T t) {
+
+			log();
+			w = t * w;
+			exp();
+
+		}
+
+		T abs() {
+			return static_cast<T>(sqrt((*this) * (*this)));
+		}
+
+		void slerp(Quaternion<T> q1, T t) {
+
+			Quaternion<T> q0 = (*this);
+
+			inverse();
+			Quaternion<T> qTemp = q1.product(*this);
+			qTemp.pow(t);
+			(*this) = qTemp.product( q0 );
+
+		}
+
+	protected:
+		T x;
+		T y;
+		T z;
+		T w;
+	};
+
+	typedef Quaternion<float> Quaternionf;
 
 
 };
