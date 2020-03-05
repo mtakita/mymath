@@ -148,10 +148,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="detectlinkerror.cpp" />
+    <ClCompile Include="geometryhelper.cpp" />
     <ClCompile Include="mymath.cpp" />
+    <ClCompile Include="Validator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="geometryhelper.h" />
     <ClInclude Include="mymath.h" />
+    <ClInclude Include="Validator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

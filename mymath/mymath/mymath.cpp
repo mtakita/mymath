@@ -9,9 +9,31 @@
 #include "mymath.h"
 #include "geometryhelper.h"
 
+#include "Validator.h"
+
 using namespace mymath;
 
 #define PI 3.14159265
+
+class Assert {
+
+public:
+    static void AssertEqual(float v1, float v2, float acceptableErrorPercentage) {
+
+        float errorPercentage = (v1 - v2) * 100.0f;
+
+        if (v1 == v2)
+            return;
+
+        if (errorPercentage <= acceptableErrorPercentage)
+            return;
+
+        printf("!!!!Test Failed!!!!.   AssertEqual(float %7.7f, float %7.7f, float %7.7f )\n", v1, v2, acceptableErrorPercentage);
+
+    }
+
+
+};
 
 Matrixf4x4 GetRotateMatrix4x4(float rotX, float rotY, float rotZ) {
 
@@ -47,11 +69,11 @@ bool GetEulerAngle(Matrixf3x3 rotMatInW, float* rotX, float* rotY, float* rotZ)
 
     if (fabs(sp) > 0.9999f) {
         zAxis = 0.0f;
-        xAxis = atan2(-rotMatInW[0][2], rotMatInW[0][0]);
+        xAxis = atan2f(-rotMatInW[0][2], rotMatInW[0][0]);
     }
     else {
-        xAxis = atan2(rotMatInW[2][0], rotMatInW[2][2]);
-        zAxis = atan2(rotMatInW[0][1], rotMatInW[1][1]);
+        xAxis = atan2f(rotMatInW[2][0], rotMatInW[2][2]);
+        zAxis = atan2f(rotMatInW[0][1], rotMatInW[1][1]);
     }
 
     *rotX = xAxis * (180.f / PI );
@@ -754,12 +776,14 @@ void test9() {
 
 }
 
-void quaternion_test() {
 
-    std::cout << "Start testing on quaternion functions." << std::endl;
 
-    Vectorf3 v1{ 10.0f, 0.0f, 0.0f };
-    Vectorf3 v2{ -10.0f, 0.0f, 0.0f };
+void quaternion_test_slerp() {
+
+    std::cout << "Start testing on quaternion slerp functions." << std::endl;
+
+    Vectorf3 v1{ 45.0f, 30.0f, 0.0f };
+    Vectorf3 v2{ 0.0f,  30.0f, 0.0f };
 
     for ( float i = 0.0f; i < 1.0f; i = i + 0.1f ) {
 
@@ -943,6 +967,10 @@ void conversion_test_EulerAnglesAndMatrix() {
         { 0.0f,  40.0f, 180.0f },
     };
 
+    Validator validator;
+    validator.set(MINUS_ZERO_AND_PLUS_ZERO_SAME);
+    validator.set(ROUND_TO_3DECIMAL_PLACES);
+
     for (int i = 0; i < sizeof(EulerAngles) / sizeof(float[3]); i++) {
 
         float heading = EulerAngles[i][0];
@@ -954,12 +982,17 @@ void conversion_test_EulerAnglesAndMatrix() {
         float heading_ret, pitch_ret, bank_ret;
         m.GetEulerAngles(heading_ret, pitch_ret, bank_ret);
 
-        printf("%d\n", i);
-        printf("%7.3f %7.3f %7.3f \n", heading, pitch, bank);
-        printf("%7.3f %7.3f %7.3f \n", heading_ret, pitch_ret, bank_ret );
+//        printf("%d\n", i);
+//        printf("%7.3f %7.3f %7.3f \n", heading, pitch, bank);
+//        printf("%7.3f %7.3f %7.3f \n", heading_ret, pitch_ret, bank_ret );
+
+        vector<float> before{ heading, pitch, bank };
+        vector<float> after{ heading_ret, pitch_ret, bank_ret };
+        validator.add(i, "EulerAngles and Matrix->EulerAngles", before, after);
 
     }
 
+    validator.validate();
 
 
 }
@@ -1101,33 +1134,332 @@ void conversion_test_QuaternionAndMatrix() {
         { 180.0f * (PI / 180.0f), normalxz},
     };
 
-    for (int i = 0; i < sizeof(tests) / sizeof(tests[0]); i++) {
+    Validator validator;
 
-        float theta = tests[i].theta;
-        Vectorf3 normal = tests[i].normal;
+    for (int testNo = 0; testNo < sizeof(tests) / sizeof(tests[0]); testNo++) {
+
+        float theta = tests[testNo].theta;
+        Vectorf3 normal = tests[testNo].normal;
+
+//        printf("# %d \n", i);
+//        printf("theta %7.3f, normal.x %7.3f normal.y %7.3f normal.z %7.3f \n", theta, normal.getX(), normal.getY(), normal.getZ());
 
         Quaternionf q{ cos(theta / 2), sin(theta / 2) * normal };
+//        printf("->Quaternion q.w %7.3f, q.x %7.3f q.y %7.3f q.z %7.3f \n", q.w, q.x, q.y, q.z);
 
         Matrixf3x3 rotMat = q;
-        Matrixf3x3 rotMat_ans = rotate3x3( normal[0], normal[1], normal[2], theta );
+//        printf("->Quaternion(q) to Matrix(rotMat) \n");
+//        printf("m11 m12 m13 %7.3f %7.3f %7.3f \n", rotMat[0][0], rotMat[0][1], rotMat[0][2]);
+//        printf("m21 m22 m23 %7.3f %7.3f %7.3f \n", rotMat[1][0], rotMat[1][1], rotMat[1][2]);
+//        printf("m31 m32 m33 %7.3f %7.3f %7.3f \n", rotMat[2][0], rotMat[2][1], rotMat[2][2]);
 
         float x, y, z;
         rotMat.GetEulerAngles(x, y, z);
+//        printf("->Matrix(rotMat) to EulerAngles(%7.3f, %7.3f, %7.3f) \n", x, y, z );
+
+        Matrixf3x3 rotMat_ans = rotate3x3( normal[0], normal[1], normal[2], theta );
+//        printf("->rotate3x3( %7.3f, %7.3f, %7.3f, %7.3f )->Matrix(rotMat_ans) \n", normal[0], normal[1], normal[2], theta );
+
+//        printf("->Matrix(rotMat_ans) \n");
+//        printf("m11 m12 m13 %7.3f %7.3f %7.3f \n", rotMat_ans[0][0], rotMat_ans[0][1], rotMat_ans[0][2]);
+//        printf("m21 m22 m23 %7.3f %7.3f %7.3f \n", rotMat_ans[1][0], rotMat_ans[1][1], rotMat_ans[1][2]);
+//        printf("m31 m32 m33 %7.3f %7.3f %7.3f \n", rotMat_ans[2][0], rotMat_ans[2][1], rotMat_ans[2][2]);
 
         float x2, y2, z2;
         rotMat_ans.GetEulerAngles(x2, y2, z2);
+//        printf("->Matrix(rotMat_ans) to EulerAngles(%7.3f, %7.3f, %7.3f) \n", x2, y2, z2);
 
-        printf("%d\n", i);
-        printf("%7.3f %7.3f %7.3f \n", x, y, z);
-        printf("%7.3f %7.3f %7.3f \n", x2, y2, z2);
+        Quaternionf q_ret = rotMat_ans;
+//        printf("->Matrix(rotMat_ans) to Quaternion(q_ret) %7.3f, q.x %7.3f q.y %7.3f q.z %7.3f \n", q_ret.w, q_ret.x, q_ret.y, q_ret.z);
+
+        Matrixf3x3 rotMat2 = q_ret;
+//        printf("->Quaternion(q_ret) to Matrix(rotMat2) \n");
+//        printf("m11 m12 m13 %7.3f %7.3f %7.3f \n", rotMat2[0][0], rotMat2[0][1], rotMat2[0][2]);
+//        printf("m21 m22 m23 %7.3f %7.3f %7.3f \n", rotMat2[1][0], rotMat2[1][1], rotMat2[1][2]);
+//        printf("m31 m32 m33 %7.3f %7.3f %7.3f \n", rotMat2[2][0], rotMat2[2][1], rotMat2[2][2]);
+
+        Quaternionf q_ret2 = rotMat2;
+//        printf("->Matrix(rotMat2) to Quaternion(q_ret2) q_ret2.w %7.3f, q_ret2.x %7.3f q_ret2.y %7.3f q_ret2.z %7.3f \n", q_ret2.w, q_ret2.x, q_ret2.y, q_ret2.z);
+
+        float acceptableErrorPercentage = 0.01f;
+
+//        Assert::AssertEqual(q.w, q_ret.w, acceptableErrorPercentage );
+//        Assert::AssertEqual(q_ret.w, q_ret2.w, acceptableErrorPercentage);
+
+//        Assert::AssertEqual(q.x, q_ret.x, acceptableErrorPercentage);
+//        Assert::AssertEqual(q_ret.x, q_ret2.x, acceptableErrorPercentage);
+
+//        Assert::AssertEqual(q.y, q_ret.y, acceptableErrorPercentage);
+//        Assert::AssertEqual(q_ret.y, q_ret2.y, acceptableErrorPercentage);
+
+//        Assert::AssertEqual(q.z, q_ret.z, acceptableErrorPercentage);
+//        Assert::AssertEqual(q_ret.z, q_ret2.z, acceptableErrorPercentage);
+
+        vector<float> quaternion    { q.w    , q.x    , q.y    , q.z };
+        vector<float> quaternion_ret{ q_ret.w, q_ret.x, q_ret.y, q_ret.z };
+        validator.add(testNo, "Quaternion and rotate()->Matrix->Quaternion", quaternion, quaternion_ret);
+
+        float x3, y3, z3;
+        rotMat2.GetEulerAngles(x3, y3, z3);
+
+        vector<float> matrix;
+        vector<float> matrix_ret;
+
+        vector<float> matrix2;
+        vector<float> matrix2_ret;
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+
+//                Assert::AssertEqual(rotMat[i][j], rotMat_ans[i][j], acceptableErrorPercentage);
+//                Assert::AssertEqual(rotMat_ans[i][j], rotMat2[i][j], acceptableErrorPercentage);
+                matrix.push_back(rotMat[i][j]);
+                matrix_ret.push_back(rotMat_ans[i][j]);
+
+                matrix2.push_back(rotMat_ans[i][j]);
+                matrix2_ret.push_back(rotMat2[i][j]);
+            }
+        }
+
+        validator.add(testNo, "Quaternion->Matrix and rotate()->Matrix", matrix, matrix_ret);
+        validator.add(testNo, "rotate()->Matrix and rotate()->Matrix->Quaternion->Matrix", matrix2, matrix2_ret);
+
+        vector<float> eulerAngles2;
+        vector<float> eulerAngles2_ret;
+
+        eulerAngles2.push_back(x2);
+        eulerAngles2.push_back(y2);
+        eulerAngles2.push_back(z2);
+
+        eulerAngles2_ret.push_back(x3);
+        eulerAngles2_ret.push_back(y3);
+        eulerAngles2_ret.push_back(z3);
+
+        validator.add(testNo, "rotate()->Matrix->EulerAngles and rotate()->Matrix->Quaternion->Matrix->EulerAngles", eulerAngles2, eulerAngles2_ret);
+ 
+//        Assert::AssertEqual(x, x2, acceptableErrorPercentage);
+//        Assert::AssertEqual(y, y2, acceptableErrorPercentage);
+//        Assert::AssertEqual(z, z2, acceptableErrorPercentage);
+
+        vector<float> eulerAngles;
+        vector<float> eulerAngles_ret;
+
+        eulerAngles.push_back(x);
+        eulerAngles.push_back(y);
+        eulerAngles.push_back(z);
+
+        eulerAngles_ret.push_back(x2);
+        eulerAngles_ret.push_back(y2);
+        eulerAngles_ret.push_back(z2);
+
+        validator.add(testNo, "Quaternion->Matrix->EulerAngles and rotate()->Matrix->EulerAngles", eulerAngles, eulerAngles_ret);
+
 
     }
 
-
-
-
+    validator.set(MINUS_ZERO_AND_PLUS_ZERO_SAME);
+    validator.set(ROUND_TO_3DECIMAL_PLACES);
+    validator.validate();
 
     return;
+}
+
+void conversion_test_EulerAnglesAndQuaternion() {
+
+    std::cout << "Start testing on conversion functions between Euler angles and quaternion." << std::endl;
+
+    float EulerAngles[][3] = {
+        {   0.0f, 0.0f, 0.0f },
+        {  10.0f, 0.0f, 0.0f },
+        {  20.0f, 0.0f, 0.0f },
+        {  30.0f, 0.0f, 0.0f },
+        {  40.0f, 0.0f, 0.0f },
+        {  50.0f, 0.0f, 0.0f },
+        {  60.0f, 0.0f, 0.0f },
+        {  70.0f, 0.0f, 0.0f },
+        {  80.0f, 0.0f, 0.0f },
+        {  90.0f, 0.0f, 0.0f },
+        { 100.0f, 0.0f, 0.0f },
+        { 110.0f, 0.0f, 0.0f },
+        { 120.0f, 0.0f, 0.0f },
+        { 130.0f, 0.0f, 0.0f },
+        { 140.0f, 0.0f, 0.0f },
+        { 150.0f, 0.0f, 0.0f },
+        { 160.0f, 0.0f, 0.0f },
+        { 170.0f, 0.0f, 0.0f },
+        { 180.0f, 0.0f, 0.0f },
+
+        {   0.0f,   0.0f, 0.0f },
+        {   0.0f,  10.0f, 0.0f },
+        {   0.0f,  20.0f, 0.0f },
+        {   0.0f,  30.0f, 0.0f },
+        {   0.0f,  40.0f, 0.0f },
+        {   0.0f,  50.0f, 0.0f },
+        {   0.0f,  60.0f, 0.0f },
+        {   0.0f,  70.0f, 0.0f },
+        {   0.0f,  80.0f, 0.0f },
+        {   0.0f,  90.0f, 0.0f },
+        {   0.0f, 100.0f, 0.0f },
+        {   0.0f, 110.0f, 0.0f },
+        {   0.0f, 120.0f, 0.0f },
+        {   0.0f, 130.0f, 0.0f },
+        {   0.0f, 140.0f, 0.0f },
+        {   0.0f, 150.0f, 0.0f },
+        {   0.0f, 160.0f, 0.0f },
+        {   0.0f, 170.0f, 0.0f },
+        {   0.0f, 180.0f, 0.0f },
+
+        {   0.0f, 0.0f,   0.0f },
+        {   0.0f, 0.0f,  10.0f },
+        {   0.0f, 0.0f,  20.0f },
+        {   0.0f, 0.0f,  30.0f },
+        {   0.0f, 0.0f,  40.0f },
+        {   0.0f, 0.0f,  50.0f },
+        {   0.0f, 0.0f,  60.0f },
+        {   0.0f, 0.0f,  70.0f },
+        {   0.0f, 0.0f,  80.0f },
+        {   0.0f, 0.0f,  90.0f },
+        {   0.0f, 0.0f, 100.0f },
+        {   0.0f, 0.0f, 110.0f },
+        {   0.0f, 0.0f, 120.0f },
+        {   0.0f, 0.0f, 130.0f },
+        {   0.0f, 0.0f, 140.0f },
+        {   0.0f, 0.0f, 150.0f },
+        {   0.0f, 0.0f, 160.0f },
+        {   0.0f, 0.0f, 170.0f },
+        {   0.0f, 0.0f, 180.0f },
+
+        {   0.0f, 150.0f, 0.0f },
+        {  10.0f,  20.0f, 0.0f },
+        {  20.0f,  30.0f, 0.0f },
+        {  30.0f,  50.0f, 0.0f },
+        {  40.0f, 170.0f, 0.0f },
+        {  50.0f,   0.0f, 0.0f },
+        {  60.0f, 120.0f, 0.0f },
+        {  70.0f, 130.0f, 0.0f },
+        {  80.0f,  10.0f, 0.0f },
+        {  90.0f, 110.0f, 0.0f },
+        { 100.0f, 140.0f, 0.0f },
+        { 110.0f,  60.0f, 0.0f },
+        { 120.0f,  70.0f, 0.0f },
+        { 130.0f, 180.0f, 0.0f },
+        { 140.0f, 100.0f, 0.0f },
+        { 150.0f,  80.0f, 0.0f },
+        { 160.0f,  90.0f, 0.0f },
+        { 170.0f, 160.0f, 0.0f },
+        { 180.0f,  40.0f, 0.0f },
+
+        { 150.0f,   0.0f, 0.0f },
+        {  20.0f,  10.0f, 0.0f },
+        {  30.0f,  20.0f, 0.0f },
+        {  50.0f,  30.0f, 0.0f },
+        { 170.0f,  40.0f, 0.0f },
+        {   0.0f,  50.0f, 0.0f },
+        { 120.0f,  60.0f, 0.0f },
+        { 130.0f,  70.0f, 0.0f },
+        {  10.0f,  80.0f, 0.0f },
+        { 110.0f,  90.0f, 0.0f },
+        { 140.0f, 100.0f, 0.0f },
+        {  60.0f, 110.0f, 0.0f },
+        {  70.0f, 120.0f, 0.0f },
+        { 180.0f, 130.0f, 0.0f },
+        { 100.0f, 140.0f, 0.0f },
+        {  80.0f, 150.0f, 0.0f },
+        {  90.0f, 160.0f, 0.0f },
+        { 160.0f, 170.0f, 0.0f },
+        {  40.0f, 180.0f, 0.0f },
+
+        { 150.0f, 0.0f,   0.0f },
+        { 20.0f, 0.0f,  10.0f },
+        { 30.0f, 0.0f,  20.0f },
+        { 50.0f, 0.0f,  30.0f },
+        { 170.0f, 0.0f,  40.0f },
+        { 0.0f, 0.0f,  50.0f },
+        { 120.0f, 0.0f,  60.0f },
+        { 130.0f, 0.0f,  70.0f },
+        { 10.0f, 0.0f,  80.0f },
+        { 110.0f, 0.0f,  90.0f },
+        { 140.0f, 0.0f, 100.0f },
+        { 60.0f, 0.0f, 110.0f },
+        { 70.0f, 0.0f, 120.0f },
+        { 180.0f, 0.0f, 130.0f },
+        { 100.0f, 0.0f, 140.0f },
+        { 80.0f, 0.0f, 150.0f },
+        { 90.0f, 0.0f, 160.0f },
+        { 160.0f, 0.0f, 170.0f },
+        { 40.0f, 0.0f, 180.0f },
+
+        { 0.0f, 150.0f,   0.0f },
+        { 0.0f,  20.0f,  10.0f },
+        { 0.0f,  30.0f,  20.0f },
+        { 0.0f,  50.0f,  30.0f },
+        { 0.0f, 170.0f,  40.0f },
+        { 0.0f,   0.0f,  50.0f },
+        { 0.0f, 120.0f,  60.0f },
+        { 0.0f, 130.0f,  70.0f },
+        { 0.0f,  10.0f,  80.0f },
+        { 0.0f, 110.0f,  90.0f },
+        { 0.0f, 140.0f, 100.0f },
+        { 0.0f,  60.0f, 110.0f },
+        { 0.0f,  70.0f, 120.0f },
+        { 0.0f, 180.0f, 130.0f },
+        { 0.0f, 100.0f, 140.0f },
+        { 0.0f,  80.0f, 150.0f },
+        { 0.0f,  90.0f, 160.0f },
+        { 0.0f, 160.0f, 170.0f },
+        { 0.0f,  40.0f, 180.0f },
+
+        { 140.0f, 150.0f,   0.0f },
+        { 60.0f,  20.0f,  10.0f },
+        { 70.0f,  30.0f,  20.0f },
+        { 180.0f,  50.0f,  30.0f },
+        { 120.0f, 170.0f,  40.0f },
+        { 130.0f,   0.0f,  50.0f },
+        { 10.0f, 120.0f,  60.0f },
+        { 110.0f, 130.0f,  70.0f },
+        { 100.0f,  10.0f,  80.0f },
+        { 80.0f, 110.0f,  90.0f },
+        { 90.0f, 140.0f, 100.0f },
+        { 160.0f,  60.0f, 110.0f },
+        { 40.0f,  70.0f, 120.0f },
+        { 150.0f, 180.0f, 130.0f },
+        { 20.0f, 100.0f, 140.0f },
+        { 30.0f,  80.0f, 150.0f },
+        { 50.0f,  90.0f, 160.0f },
+        { 170.0f, 160.0f, 170.0f },
+        { 0.0f,  40.0f, 180.0f },
+    };
+
+    Validator validator;
+
+    for (int i = 0; i < sizeof(EulerAngles) / sizeof(float[3]); i++) {
+
+        float heading = EulerAngles[i][0];
+        float pitch = EulerAngles[i][1];
+        float bank = EulerAngles[i][2];
+
+        Quaternion<float> q{ heading, pitch, bank };
+
+        float heading_ret;
+        float pitch_ret;
+        float bank_ret;
+
+        q.GetEulerAngles(heading_ret, pitch_ret, bank_ret);
+
+        vector<float> values{ heading, pitch, bank };
+        vector<float> ans_values{ heading_ret, pitch_ret, bank_ret };
+
+        validator.add( i, "Quaternion and EulerAngles", values, ans_values);
+
+    }
+
+    validator.set(MINUS_ZERO_AND_PLUS_ZERO_SAME);
+    validator.set(ROUND_TO_INTEGER);
+    validator.validate();
+
+
+
+
 }
 
 int main()
@@ -1142,9 +1474,12 @@ int main()
     test7();
 //    test8();
 //    test9();
-    quaternion_test();
+
+    quaternion_test_slerp();
     conversion_test_EulerAnglesAndMatrix();
     conversion_test_QuaternionAndMatrix();
+
+//    conversion_test_EulerAnglesAndQuaternion();
 
     std::cout << "Hello World!\n";
 }

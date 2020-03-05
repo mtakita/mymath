@@ -4,15 +4,24 @@
 #define _MYMATH_H_
 
 #include "math.h"
+#include <algorithm>
 
 #define PI 3.141592654f
 
 namespace mymath {
 
+	template < typename T >
+	class Quaternion;
+
 	template < typename T, int len >
 	class VectorN {
 	public:
 
+		VectorN(T x, T y, T z) {
+			data[0] = x;
+			data[1] = y;
+			data[2] = z;
+		}
 		VectorN() {
 			for (int i = 0; i < len; i++) {
 				data[i] = 0;
@@ -400,12 +409,12 @@ namespace mymath {
 
 			if ( p >= (PI / 2.0f) || p <= -(PI / 2.0f) ) {
 
-				h = atan2(-(*this)[0][2], (*this)[0][0]);
+				h = atan2f(-(*this)[0][2], (*this)[0][0]);
 				b = 0.0f;
 			}
 			else {
-				h = atan2((*this)[2][0], (*this)[2][2]);
-				b = atan2((*this)[0][1], (*this)[1][1]);
+				h = atan2f((*this)[2][0], (*this)[2][2]);
+				b = atan2f((*this)[0][1], (*this)[1][1]);
 			}
 
 			hInDegree = h * (180 / PI);
@@ -449,7 +458,212 @@ namespace mymath {
 			return base::data[w];
 		}
 
-		Matrix3x3<T> operator*(const Matrix3x3<T>& that) {
+		operator Quaternion<T> () {
+
+			T m11 = (*this)[0][0];
+			T m12 = (*this)[0][1];
+			T m13 = (*this)[0][2];
+
+			T m21 = (*this)[1][0];
+			T m22 = (*this)[1][1];
+			T m23 = (*this)[1][2];
+
+			T m31 = (*this)[2][0];
+			T m32 = (*this)[2][1];
+			T m33 = (*this)[2][2];
+
+			T m12plusm21  = m12 + m21;
+			T m12minusm21 = m12 - m21;
+
+			T m23plusm32  = m23 + m32;
+			T m23minusm32 = m23 - m32;
+
+			T m31plusm13  = m31 + m13;
+			T m31minusm13 = m31 - m13;
+
+//			T w = sqrtf((m11 + m22 + m33 + 1) / 4);
+//			T x = sqrtf((m11 - m22 - m33 + 1) / 4);
+//			T y = sqrtf((m22 - m11 - m33 + 1) / 4);
+//			T z = sqrtf((m33 - m11 - m22 + 1) / 4);
+
+			T w = m11 + m22 + m33 + 1.0f;
+			T x = m11 - m22 - m33 + 1.0f;
+			T y = m22 - m11 - m33 + 1.0f;
+			T z = m33 - m11 - m22 + 1.0f;
+
+			enum largestIndex { indexW, indexX, indexY, indexZ };
+
+			enum largestIndex index = indexW;
+			T largest = w;
+
+			if ( x > largest ) {
+				largest = x;
+				index = indexX;
+			}
+			if ( y > largest) {
+				largest = y;
+				index = indexY;
+			}
+			if ( z > largest) {
+				largest = z;
+				index = indexZ;
+			}
+
+			T w_final = 0;
+			T x_final = 0;
+			T y_final = 0;
+			T z_final = 0;
+
+			switch (index) {
+			case indexW:
+				// w is a largest.
+//				w_final = w;
+				w_final = sqrtf(largest / 4.0f);
+				x_final = m23minusm32   / (4.0f * w_final);
+				y_final = m31minusm13   / (4.0f * w_final);
+				z_final = m12minusm21   / (4.0f * w_final);
+				break;
+
+			case indexX:
+				// x is a largest.
+//				x_final = x;
+				x_final = sqrtf(largest / 4.0f);
+				w_final = m23minusm32   / (4.0f * x_final);
+				y_final = m12plusm21    / (4.0f * x_final);
+				z_final = m31plusm13    / (4.0f * x_final);
+				break;
+
+			case indexY:
+				// y is a largest.
+//				y_final = y;
+				y_final = sqrtf(largest / 4.0f);
+				w_final = m31minusm13   / (4.0f * y_final);
+				x_final = m12plusm21    / (4.0f * y_final);
+				z_final = m23plusm32    / (4.0f * y_final);
+				break;
+
+			case indexZ:
+				// z is a largest.
+//				z_final = z;
+				z_final = sqrtf(largest / 4.0f);
+				w_final = m12minusm21   / (4.0f * z_final);
+				x_final = m31plusm13    / (4.0f * z_final);
+				y_final = m23plusm32    / (4.0f * z_final);
+				break;
+
+			}
+
+			VectorN<T, 3> partVector{ x_final, y_final, z_final };
+			Quaternion<T> quaternion{ w_final, partVector };
+
+			return quaternion;
+
+		}
+
+/*
+	operator Quaternion<T>() {
+
+		T m11 = ((*this)[0])[0];
+		T m12 = ((*this)[0])[1];
+		T m13 = ((*this)[0])[2];
+
+		T m21 = ((*this)[1])[0];
+		T m22 = ((*this)[1])[1];
+		T m23 = ((*this)[1])[2];
+
+		T m31 = ((*this)[2])[0];
+		T m32 = ((*this)[2])[1];
+		T m33 = ((*this)[2])[2];
+
+		T m12plusm21 = m12 + m21;
+		T m12minusm21 = m12 - m21;
+
+		T m23plusm32 = m23 + m32;
+		T m23minusm32 = m23 - m32;
+
+		T m31plusm13 = m31 + m13;
+		T m31minusm13 = m31 - m13;
+
+		//			T w = sqrtf((m11 + m22 + m33 + 1) / 4);
+		//			T x = sqrtf((m11 - m22 - m33 + 1) / 4);
+		//			T y = sqrtf((m22 - m11 - m33 + 1) / 4);
+		//			T z = sqrtf((m33 - m11 - m22 + 1) / 4);
+
+		T w = m11 + m22 + m33 + 1.0f;
+		T x = m11 - m22 - m33 + 1.0f;
+		T y = m22 - m11 - m33 + 1.0f;
+		T z = m33 - m11 - m22 + 1.0f;
+
+		enum largestIndex { indexW, indexX, indexY, indexZ };
+
+		enum largestIndex index = indexW;
+		T largest = w;
+
+		if (x > largest) {
+			largest = x;
+			index = indexX;
+		}
+		if (y > largest) {
+			largest = y;
+			index = indexY;
+		}
+		if (z > largest) {
+			largest = z;
+			index = indexZ;
+		}
+
+		T w_final = 0;
+		T x_final = 0;
+		T y_final = 0;
+		T z_final = 0;
+
+		switch (index) {
+		case indexW:
+			// w is a largest.
+	//				w_final = w;
+			w_final = sqrtf(largest) * 0.5f;
+			x_final = (m23minusm32 / w_final) * 0.25f;
+			y_final = (m31minusm13 / w_final) * 0.25f;
+			z_final = (m12minusm21 / w_final) * 0.25f;
+			break;
+
+		case indexX:
+			// x is a largest.
+	//				x_final = x;
+			x_final = sqrtf(largest) * 0.5f;
+			w_final = (m23minusm32 / x_final) * 0.25f;
+			y_final = (m12plusm21 / x_final) * 0.25f;
+			z_final = (m31plusm13 / x_final) * 0.25f;
+			break;
+
+		case indexY:
+			// y is a largest.
+	//				y_final = y;
+			y_final = sqrtf(largest) * 0.5f;
+			w_final = (m31minusm13 / y_final) * 0.25f;
+			x_final = (m12plusm21 / y_final) * 0.25f;
+			z_final = (m23plusm32 / y_final) * 0.25f;
+			break;
+
+		case indexZ:
+			// z is a largest.
+	//				z_final = z;
+			z_final = sqrtf(largest) * 0.5f;
+			w_final = (m12minusm21 / z_final) * 0.25f;
+			x_final = (m31plusm13 / z_final) * 0.25f;
+			y_final = (m23plusm32 / z_final) * 0.25f;
+			break;
+
+		}
+
+		VectorN<T, 3> partVector{ x_final, y_final, z_final };
+		Quaternion<T> quaternion{ w_final, partVector };
+
+		return quaternion;
+
+	}
+*/
+	Matrix3x3<T> operator*(const Matrix3x3<T>& that) {
 
 			Matrix3x3<T> myThat = { that };
 			Matrix3x3<T> ret;
@@ -830,17 +1044,17 @@ namespace mymath {
 		Matrixf4x4 rotationTransform;
 		rotationTransform.identity();
 
-		rotationTransform[0][0] = static_cast<float>(pow(normal_x, 2) * (1 - cos(theta)) + cos(theta));
-		rotationTransform[0][1] = static_cast<float>(normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta));
-		rotationTransform[0][2] = static_cast<float>(normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta));
+		rotationTransform[0][0] = pow(normal_x, 2) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[0][1] = normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta);
+		rotationTransform[0][2] = normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta);
 
-		rotationTransform[1][0] = static_cast<float>(normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta));
-		rotationTransform[1][1] = static_cast<float>(pow(normal_y, 2) * (1 - cos(theta)) + cos(theta));
-		rotationTransform[1][2] = static_cast<float>(normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta));
+		rotationTransform[1][0] = normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta);
+		rotationTransform[1][1] = pow(normal_y, 2) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[1][2] = normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta);
 
-		rotationTransform[2][0] = static_cast<float>(normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta));
-		rotationTransform[2][1] = static_cast<float>(normal_y * normal_x * (1 - cos(theta)) - normal_x * sin(theta));
-		rotationTransform[2][2] = static_cast<float>(pow(normal_z, 2) * (1 - cos(theta)) + cos(theta));
+		rotationTransform[2][0] = normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta);
+		rotationTransform[2][1] = normal_y * normal_z * (1 - cos(theta)) - normal_x * sin(theta);
+		rotationTransform[2][2] = pow(normal_z, 2) * (1 - cos(theta)) + cos(theta);
 
 		return rotationTransform;
 	}
@@ -899,17 +1113,17 @@ namespace mymath {
 		Matrixf4x4 scalingTransform;
 		scalingTransform.identity();
 
-		scalingTransform[0][0] = static_cast<float>(pow(nX, 2.0f) * (k - 1.0f) + 1.0f);
-		scalingTransform[0][1] = static_cast<float>(nX * nY * (k - 1.0f));
-		scalingTransform[0][2] = static_cast<float>(nX * nZ * (k - 1.0f));
+		scalingTransform[0][0] = powf(nX, 2.0f) * (k - 1.0f) + 1.0f;
+		scalingTransform[0][1] = nX * nY * (k - 1.0f);
+		scalingTransform[0][2] = nX * nZ * (k - 1.0f);
 
-		scalingTransform[1][0] = static_cast<float>(nY * nX * (k - 1.0f));
-		scalingTransform[1][1] = static_cast<float>(pow(nY, 2.0f) * (k - 1.0f) + 1.0f);
-		scalingTransform[1][2] = static_cast<float>(nY * nZ * (k - 1.0f));
+		scalingTransform[1][0] = nY * nX * (k - 1.0f);
+		scalingTransform[1][1] = powf(nY, 2.0f) * (k - 1.0f) + 1.0f;
+		scalingTransform[1][2] = nY * nZ * (k - 1.0f);
 
-		scalingTransform[2][0] = static_cast<float>(nZ * nX * (k - 1.0f));
-		scalingTransform[2][1] = static_cast<float>(nZ * nY * (k - 1.0f));
-		scalingTransform[2][2] = static_cast<float>(pow(nZ, 2.0f) * (k - 1.0f) + 1.0f);
+		scalingTransform[2][0] = nZ * nX * (k - 1.0f);
+		scalingTransform[2][1] = nZ * nY * (k - 1.0f);
+		scalingTransform[2][2] = powf(nZ, 2.0f) * (k - 1.0f) + 1.0f;
 
 		return scalingTransform;
 	}
@@ -954,18 +1168,71 @@ namespace mymath {
 			w = 0.0f;
 		}
 
-		Quaternion( T inW, Vectorf3 v ) {
+		Quaternion( T inW, VectorN<T, 3> v ) {
 			x = v[0];
 			y = v[1];
 			z = v[2];
 			this->w = inW;
 		}
 
+		Quaternion(T headingInDegree, T pitchInDegree, T bankInDegree){
+
+			T heading = headingInDegree * ( PI / 180.0f );
+			T pitch   = pitchInDegree   * ( PI / 180.0f );
+			T bank    = bankInDegree    * ( PI / 180.0f );
+
+			VectorN<T,3> normalX{ 1.0f, 0.0f, 0.0f };
+			VectorN<T,3> normalY{ 0.0f, 1.0f, 0.0f };
+			VectorN<T,3> normalZ{ 0.0f, 0.0f, 1.0f };
+
+			Quaternion<T> qHeading{ cosf(heading / 2.0f), sinf(heading/ 2.0f) * normalY };
+			Quaternion<T> qPitch  { cosf(pitch   / 2.0f), sinf(pitch  / 2.0f) * normalX };
+			Quaternion<T> qBank   { cosf(bank    / 2.0f), sinf(bank   / 2.0f) * normalZ };
+
+			Quaternion<T> qTotal = qHeading.product( qPitch ).product( qBank );
+
+			w = qTotal.w;
+			x = qTotal.x;
+			y = qTotal.y;
+			z = qTotal.z;
+		}
+
+		void GetEulerAngles(T& heading, T& pitch, T& bank) {
+
+			T pTmp = -(2 * z * y - 2 * x * w);
+			if (pTmp > 0.0f) {
+				pTmp = std::min(1.0f, pTmp);
+			}
+			else {
+				pTmp = std::max(-1.0f, pTmp);
+			}
+
+			T p = asin(pTmp);
+
+			T h, b;
+
+			if (fabs(pTmp) > 0.9999f) {
+
+				h = atan2f(-(2*x*z - 2*y*w) , (1 - 2*powf(y, 2.0f) - 2*powf(z, 2.0f)));
+				b = 0.0f;
+			}
+			else {
+
+				h = atan2f( ( 2.0f*x*z + 2.0f*y*w) , ( 1 - 2.0f*powf(x,2.0f)- 2.0f*powf(y,2.0f)) );
+				b = atan2f( ( 2.0f*x*y + 2.0f*z*w) , ( 1 - 2.0f*powf(x,2.0f)- 2.0f*powf(z,2.0f)) );
+			}
+
+			heading = h * ( 180.0f / PI );
+			pitch   = p * ( 180.0f / PI );
+			bank    = b * ( 180.0f / PI );
+
+		}
+
 		operator Matrixf3x3 () {
 			
-			Vectorf3 p = { 1 - 2* powf(y,2.0f) - 2* powf(z,2.0f), 2*x*y + 2*z*w                        , 2*x*z - 2*y*w                    };
-			Vectorf3 q = { 2*y*x - 2*z*w                    , 1 - 2* powf( x, 2.0f) - 2* powf(z, 2.0f ), 2*y*z + 2*x*w                    };
-			Vectorf3 r = { 2*x*z + 2*y*w                    , 2*z*y - 2*x*w                        , 1 - 2* powf(x,2.0f) - 2* powf(y,2.0f)};
+			Vectorf3 p = { 1.0f - 2.0f * powf(y,2.0f) - 2.0f * powf(z,2.0f), 2.0f *x*y + 2.0f *z*w                               , 2.0f *x*z - 2.0f *y*w                            };
+			Vectorf3 q = { 2.0f *y*x - 2.0f *z*w                           , 1.0f - 2.0f * powf( x, 2.0f) - 2.0f * powf(z, 2.0f ), 2.0f *y*z + 2.0f *x*w                            };
+			Vectorf3 r = { 2.0f *x*z + 2.0f *y*w                           , 2.0f *z*y - 2.0f *x*w                               , 1.0f - 2.0f * powf(x,2.0f) - 2.0f * powf(y,2.0f) };
 
 			Matrixf3x3 rotMat{ p, q, r };
 			return rotMat;
@@ -1080,10 +1347,10 @@ namespace mymath {
 
 		void log() {
 
-			Vectorf3 normal{ this->x, this->y, this->z };
+			Vectorf3 normal{ x, y, z };
 			normal.normalize();
 
-			T alpha = asin(x / normal.getX());
+			T alpha = acos(w);
 
 			Vectorf3 v{ alpha * normal };
 
@@ -1113,7 +1380,9 @@ namespace mymath {
 		void pow(T t) {
 
 			log();
-			w = t * w;
+
+			(*this) = (*this) * t;
+
 			exp();
 
 		}
@@ -1125,15 +1394,16 @@ namespace mymath {
 		void slerp(Quaternion<T> q1, T t) {
 
 			Quaternion<T> q0 = (*this);
+			Quaternion<T> q0_2 = (*this);
 
-			inverse();
-			Quaternion<T> qTemp = q1.product(*this);
+			q0_2.inverse();
+			Quaternion<T> qTemp = q1.product(q0_2);
 			qTemp.pow(t);
 			(*this) = qTemp.product( q0 );
 
 		}
 
-	protected:
+	public:
 		T x;
 		T y;
 		T z;
