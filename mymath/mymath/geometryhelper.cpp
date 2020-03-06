@@ -34,7 +34,7 @@ bool isRayIntersectWithPlane(Vectorf3 v1, Vectorf3 v2, Vectorf3 v3, Vectorf3 ori
     Vectorf3 e3{ v2 - v1 };
     Vectorf3 e1{ v3 - v2 };
 
-    Vectorf3 normal{ e3.cross(e1) / (e3.cross(e1).abs()) };
+    Vectorf3 normal{ e3.cross(e1) / (e3.cross(e1).length()) };
 
     // Calculate plane direction from [0.0.0];
 

@@ -142,12 +142,12 @@ namespace mymath {
 			return crossed;
 		}
 
-		T abs() {
-			return static_cast<T>(sqrt((*this) * (*this)));
+		T length() {
+			return sqrtf((*this) * (*this));
 		}
 
 		VectorN normalize() {
-			T t = abs();
+			T t = length();
 			if (t == 0.0f) {
 				return (*this);
 			}
@@ -1044,17 +1044,17 @@ namespace mymath {
 		Matrixf4x4 rotationTransform;
 		rotationTransform.identity();
 
-		rotationTransform[0][0] = pow(normal_x, 2) * (1 - cos(theta)) + cos(theta);
-		rotationTransform[0][1] = normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta);
-		rotationTransform[0][2] = normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta);
+		rotationTransform[0][0] = powf(normal_x, 2.0f) * (1.0f - cosf(theta)) + cosf(theta);
+		rotationTransform[0][1] = normal_x * normal_y * (1.0f - cosf(theta)) + normal_z * sinf(theta);
+		rotationTransform[0][2] = normal_x * normal_z * (1.0f - cosf(theta)) - normal_y * sinf(theta);
 
-		rotationTransform[1][0] = normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta);
-		rotationTransform[1][1] = pow(normal_y, 2) * (1 - cos(theta)) + cos(theta);
-		rotationTransform[1][2] = normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta);
+		rotationTransform[1][0] = normal_x * normal_y * (1.0f - cosf(theta)) - normal_z * sinf(theta);
+		rotationTransform[1][1] = powf(normal_y, 2.0f) * (1.0f - cosf(theta)) + cosf(theta);
+		rotationTransform[1][2] = normal_y * normal_z * (1.0f - cosf(theta)) + normal_x * sinf(theta);
 
-		rotationTransform[2][0] = normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta);
-		rotationTransform[2][1] = normal_y * normal_z * (1 - cos(theta)) - normal_x * sin(theta);
-		rotationTransform[2][2] = pow(normal_z, 2) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[2][0] = normal_x * normal_z * (1.0f - cosf(theta)) + normal_y * sinf(theta);
+		rotationTransform[2][1] = normal_y * normal_z * (1.0f - cosf(theta)) - normal_x * sinf(theta);
+		rotationTransform[2][2] = powf(normal_z, 2.0f) * (1.0f - cosf(theta)) + cosf(theta);
 
 		return rotationTransform;
 	}
@@ -1064,17 +1064,17 @@ namespace mymath {
 		Matrixf3x3 rotationTransform;
 		rotationTransform.identity();
 
-		rotationTransform[0][0] = powf(normal_x, 2.0f) * (1 - cos(theta)) + cos(theta);
-		rotationTransform[0][1] = normal_x * normal_y * (1 - cos(theta)) + normal_z * sin(theta);
-		rotationTransform[0][2] = normal_x * normal_z * (1 - cos(theta)) - normal_y * sin(theta);
+		rotationTransform[0][0] = powf(normal_x, 2.0f) * (1.0f - cosf(theta)) + cosf(theta);
+		rotationTransform[0][1] = normal_x * normal_y * (1.0f - cosf(theta)) + normal_z * sinf(theta);
+		rotationTransform[0][2] = normal_x * normal_z * (1.0f - cosf(theta)) - normal_y * sinf(theta);
 
-		rotationTransform[1][0] = normal_x * normal_y * (1 - cos(theta)) - normal_z * sin(theta);
-		rotationTransform[1][1] = powf(normal_y, 2.0f) * (1 - cos(theta)) + cos(theta);
-		rotationTransform[1][2] = normal_y * normal_z * (1 - cos(theta)) + normal_x * sin(theta);
+		rotationTransform[1][0] = normal_x * normal_y * (1.0f - cosf(theta)) - normal_z * sinf(theta);
+		rotationTransform[1][1] = powf(normal_y, 2.0f) * (1.0f - cosf(theta)) + cosf(theta);
+		rotationTransform[1][2] = normal_y * normal_z * (1.0f - cosf(theta)) + normal_x * sinf(theta);
 
-		rotationTransform[2][0] = normal_x * normal_z * (1 - cos(theta)) + normal_y * sin(theta);
-		rotationTransform[2][1] = normal_y * normal_z * (1 - cos(theta)) - normal_x * sin(theta);
-		rotationTransform[2][2] = powf(normal_z, 2.0f) * (1 - cos(theta)) + cos(theta);
+		rotationTransform[2][0] = normal_x * normal_z * (1.0f - cosf(theta)) + normal_y * sinf(theta);
+		rotationTransform[2][1] = normal_y * normal_z * (1.0f - cosf(theta)) - normal_x * sinf(theta);
+		rotationTransform[2][2] = powf(normal_z, 2.0f) * (1.0f - cosf(theta)) + cosf(theta);
 
 		return rotationTransform;
 	}
@@ -1166,6 +1166,13 @@ namespace mymath {
 			y = 0.0f;
 			z = 0.0f;
 			w = 0.0f;
+		}
+
+		Quaternion( T inW, T inX, T inY, T inZ ) {
+			w = inW;
+			x = inX;
+			y = inY;
+			z = inZ;
 		}
 
 		Quaternion( T inW, VectorN<T, 3> v ) {
@@ -1271,6 +1278,17 @@ namespace mymath {
 			ret.w *= v;
 
 			return ret;
+		}
+
+		const Quaternion<T> operator+(Quaternion<T> q ) const {
+
+			T wRet = this->w + q.w;
+			T xRet = this->x + q.x;
+			T yRet = this->y + q.y;
+			T zRet = this->z + q.z;
+
+			Quaternion<T> qRet { wRet, xRet, yRet, zRet };
+			return qRet;
 		}
 
 		void conjugate() {
@@ -1411,6 +1429,45 @@ namespace mymath {
 	};
 
 	typedef Quaternion<float> Quaternionf;
+
+	template<typename T>
+	Quaternion<T> slerp(Quaternion<T> q0, Quaternion<T> q1, T t) {
+
+		VectorN<T, 3> v0{ q0.x, q0.y, q0.z };
+		VectorN<T, 3> v1{ q1.x, q1.y, q1.z };
+
+		v0.normalize();
+		v1.normalize();
+
+		T cosw = (v0 * v1) / (v0.length() * v1.length());
+		if (cosw < 0) {
+			// Choose shortest arc.
+			v1 = v1 * -1.0f;
+			cosw = -cosw;
+		}
+
+		T k0, k1;
+
+		if (cosw > 0.9999f) {
+
+			k0 = 1.0f - t;
+			k1 = t;
+		}
+		else {
+
+			T sinw = sqrtf(1.0f - cosw * cosw);
+			T w = atan2f(sinw, cosw);
+
+			T oneOverSinW = 1.0f / sinw;
+
+			k0 = sinf( (1.0f - t) * w) * oneOverSinW;
+			k1 = sinf(t * w) * oneOverSinW;
+		}
+
+		Quaternion<T> qRet{ q0 * k0 + q1 * k1 };
+		return qRet;
+
+	}
 
 
 };

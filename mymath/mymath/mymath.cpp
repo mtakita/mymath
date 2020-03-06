@@ -13,7 +13,7 @@
 
 using namespace mymath;
 
-#define PI 3.14159265
+//#define PI 3.14159265f
 
 class Assert {
 
@@ -96,7 +96,7 @@ Matrixf4x4 genLoc4x4Mat( float x, float y, float z) {
 Matrixf3x3 genRot3x3Mat( Vectorf3 inAxis, float rotInDeg ){
 
     // Convert from degree to radian measure.
-    float rot = rotInDeg * (M_PI / 180);
+    float rot = rotInDeg * (M_PI / 180.0f);
 
     // for x-axis.
     Vectorf3 xAxis{ 1,0,0 };
@@ -150,17 +150,17 @@ Matrixf4x4 genRot4x4MatForUE(float xRotInDeg, float yRotInDeg, float zRotInDeg) 
 
 void test1() {
 
-    Matrixf4x4 matCr = genRot4x4MatForUE(-22, 30, 0);
-    Matrixf4x4 matCl = genLoc4x4Mat(3.3, 0, 0);
+    Matrixf4x4 matCr = genRot4x4MatForUE(-22.0f, 30.0f, 0.0f);
+    Matrixf4x4 matCl = genLoc4x4Mat(3.3f, 0.0f, 0.0f);
 
-    Matrixf4x4 matAcr = genRot4x4MatForUE(0, 0, 0);
-    Matrixf4x4 matAcl = genLoc4x4Mat(-300, 0, 0);
+    Matrixf4x4 matAcr = genRot4x4MatForUE(0.0f, 0.0f, 0.0f);
+    Matrixf4x4 matAcl = genLoc4x4Mat(-300.0f, 0.0f, 0.0f);
 
-    Matrixf4x4 matAr = genRot4x4MatForUE(0, -20, 0);
-    Matrixf4x4 matAl = genLoc4x4Mat(-136, 6.6, 151);
+    Matrixf4x4 matAr = genRot4x4MatForUE(0.0f, -20.0f, 0.0f);
+    Matrixf4x4 matAl = genLoc4x4Mat(-136.0f, 6.6f, 151.0f);
 
-    Matrixf4x4 matOr = genRot4x4MatForUE(0, 0, -50);
-    Matrixf4x4 matOl = genLoc4x4Mat(0, 0, 0);
+    Matrixf4x4 matOr = genRot4x4MatForUE(0.0f, 0.0f, -50.0f);
+    Matrixf4x4 matOl = genLoc4x4Mat(0.0f, 0.0f, 0.0f);
 
     Matrixf4x4 transformMat = matCr * matCl * matAcr * matAcl * matAr * matAl * matOr * matOl;
 
@@ -511,7 +511,6 @@ void test6() {
 
 
 
-#define PI 3.14159265
 /*
 void test7() {
 
@@ -688,12 +687,12 @@ void test7_2( Vectorf3 origin, Vectorf3 direction, Vectorf3 triangle[3] ) {
 
 void test7() {
 
-    Vectorf3 origin{ -23.1379528, 300.000000, 171.331680};
+    Vectorf3 origin{ -23.1379528f, 300.000000f, 171.331680f};
 
     // Triangle3
-    Vectorf3 v7{ -2.11093211, 8.31966591, 2.11100006 };
-    Vectorf3 v8{ -2.11093211, 0.671500027, 2.11100006 };
-    Vectorf3 v9{ 2.11093211, 8.31966591, 2.11100006 };
+    Vectorf3 v7{ -2.11093211f, 8.31966591f, 2.11100006f };
+    Vectorf3 v8{ -2.11093211f, 0.671500027f, 2.11100006f };
+    Vectorf3 v9{ 2.11093211f, 8.31966591f, 2.11100006f };
 
     Vectorf3 triangle3[] = { v7, v8, v9 };
     Vectorf3 posInWorld{ -23.1379528f, 300.000000f, 171.331680f };
@@ -783,17 +782,18 @@ void quaternion_test_slerp() {
     std::cout << "Start testing on quaternion slerp functions." << std::endl;
 
     Vectorf3 v1{ 45.0f, 30.0f, 0.0f };
-    Vectorf3 v2{ 0.0f,  30.0f, 0.0f };
+    Vectorf3 v2{ -45.0f,  30.0f, 0.0f };
 
-    for ( float i = 0.0f; i < 1.0f; i = i + 0.1f ) {
+    float t = 0.0f;
+    for (int i = 0; i < 10+1; i++ ){
 
         Quaternionf q1 = { v1 };
         Quaternionf q2 = { v2 };
 
-        q1.slerp(q2, i);
+        Quaternionf q = slerp(q1, q2, t);
+        t = t + 0.1f;
 
-        Vectorf3 vResult = q1;
-        printf("%7.3f %7.3f %7.3f \n", vResult.getX(), vResult.getY(), vResult.getZ() );
+        printf("%7.3f %7.3f %7.3f %7.3f \n", q.w, q.x, q.y, q.z );
 
 
     }

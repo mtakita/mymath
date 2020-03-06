@@ -134,7 +134,7 @@ public:
 	}
 
 
-	int constraintValue;
+	int constraintValue = 0;
 
 	vector<string> testNames;
 	vector<vector<float>> values;
