@@ -1,6 +1,2 @@
-﻿  mymath.cpp
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\Validator.h(42,1): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\Validator.h(55,1): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\Validator.h(102,1): warning C4267: '初期化中': 'size_t' から 'int' に変換しました。データが失われているかもしれません。
-C:\Users\makot\Documents\GitHub\mymath\mymath\mymath\mymath.cpp(99,15): warning C4244: '初期化中': 'double' から 'float' への変換です。データが失われる可能性があります。
+﻿  geometryhelper.cpp
   mymath.vcxproj -> C:\Users\makot\Documents\GitHub\mymath\mymath\x64\Debug\mymath.exe

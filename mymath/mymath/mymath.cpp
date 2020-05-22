@@ -659,15 +659,21 @@ void test7() {
 }
 */
 
-void test7_2( Vectorf3 origin, Vectorf3 direction, Vectorf3 triangle[3] ) {
+typedef struct strTriangle {
+    Vectorf3 v1;
+    Vectorf3 v2;
+    Vectorf3 v3;
+}t_triangle;
+
+void test7_2( Vectorf3 origin, Vectorf3 direction, t_triangle triangle ) {
 
     std::cout << "Triangle hit test" << std::endl;
 
     Vectorf3 pointOfIntersection;
 
-    Vectorf3 v1 = triangle[0];
-    Vectorf3 v2 = triangle[1];
-    Vectorf3 v3 = triangle[2];
+    Vectorf3 v1 = triangle.v1;
+    Vectorf3 v2 = triangle.v2;
+    Vectorf3 v3 = triangle.v3;
 
     bool ret = isRayIntersectWithPlane(v1, v2, v3, origin, direction, pointOfIntersection);
 
@@ -685,23 +691,52 @@ void test7_2( Vectorf3 origin, Vectorf3 direction, Vectorf3 triangle[3] ) {
 
 }
 
-void test7() {
+void rayIntersection_test_plane() {
 
-    Vectorf3 origin{ -23.1379528f, 300.000000f, 171.331680f};
+    Matrixf3x3 scaleMat = scale3x3(0.7f);
 
     // Triangle3
-    Vectorf3 v7{ -2.11093211f, 8.31966591f, 2.11100006f };
-    Vectorf3 v8{ -2.11093211f, 0.671500027f, 2.11100006f };
-    Vectorf3 v9{ 2.11093211f, 8.31966591f, 2.11100006f };
+    Vectorf3 v1{ 1.0f, 0.0f, 0.0f };
+    Vectorf3 v2{ -1.0f, 0.0f, -1.0f };
+    Vectorf3 v3{ 0.0f, 0.0f, 1.0f };
 
-    Vectorf3 triangle3[] = { v7, v8, v9 };
-    Vectorf3 posInWorld{ -23.1379528f, 300.000000f, 171.331680f };
-    Vectorf3 direction = posInWorld - origin;
-    direction.normalize();
+    Vectorf3 origin{ 0.0f, 1.5f, 0.0f };
+    t_triangle triangle1 { v1, v2, v3 };
+    Vectorf3 posInWorld{ 0.0f, 1.0f, 0.0f };
 
-    test7_2(posInWorld, direction, triangle3 );
+    vector<t_triangle> triangles;
+    vector<Vectorf3> posInWorlds;
+    vector<Vectorf3> directions;
 
+    Vectorf3 v1s{ v1 * scaleMat };
+    Vectorf3 v2s{ v2 * scaleMat };
+    Vectorf3 v3s{ v3 * scaleMat };
 
+    Quaternion<float> q1{ v1s - origin };
+    Quaternion<float> q2{ v2s - origin };
+
+    float t = 0.0f;
+    for (int i = 0; i < (10+1); i++) {
+
+        Quaternion<float> q = slerp(q1, q2, t);
+        Vectorf3 v{ q };
+
+        triangles.push_back(triangle1);
+        posInWorlds.push_back(origin);
+        directions.push_back(q);
+
+        t = t + (1.0f/10.0f);
+    }
+
+    for (int i = 0; i < posInWorlds.size(); i++) {
+
+        Vectorf3 direction = directions[i];
+        Vectorf3 posInWorld = posInWorlds[i];
+        t_triangle triangle = triangles[i];
+
+        test7_2(posInWorld, direction, triangle);
+
+    }
 
 }
 
@@ -784,19 +819,47 @@ void quaternion_test_slerp() {
     Vectorf3 v1{ 45.0f, 30.0f, 0.0f };
     Vectorf3 v2{ -45.0f,  30.0f, 0.0f };
 
+    Validator validator;
+    Validator validator_myRet;
+
     float t = 0.0f;
     for (int i = 0; i < 10+1; i++ ){
 
         Quaternionf q1 = { v1 };
         Quaternionf q2 = { v2 };
 
-        Quaternionf q = slerp(q1, q2, t);
+        Quaternionf q_ret = slerp(q1, q2, t);
+        Quaternionf q_ret2 = q1.slerp( q2, t);
+        Quaternionf q_ret3 = q1.mySlerp(q2, t);
+
+        vector<float> v_ret;
+        vector<float> v_ret2;
+        vector<float> v_myRet;
+
+        v_ret.push_back(q_ret.w);
+        v_ret.push_back(q_ret.x);
+        v_ret.push_back(q_ret.y);
+        v_ret.push_back(q_ret.z);
+
+        v_ret2.push_back(q_ret2.w);
+        v_ret2.push_back(q_ret2.x);
+        v_ret2.push_back(q_ret2.y);
+        v_ret2.push_back(q_ret2.z);
+
+        v_myRet.push_back(q_ret3.w);
+        v_myRet.push_back(q_ret3.x);
+        v_myRet.push_back(q_ret3.y);
+        v_myRet.push_back(q_ret3.z);
+
+        validator.add(i, "slerp(q1, q2, t) and q1.slerp( q2, t)", v_ret, v_ret2);
+        validator_myRet.add(i, "q1.slerp( q2, t) and q1.mySlerp(q2, t)", v_ret2, v_myRet);
+
         t = t + 0.1f;
 
-        printf("%7.3f %7.3f %7.3f %7.3f \n", q.w, q.x, q.y, q.z );
-
-
     }
+
+    validator.validate();
+    validator_myRet.validate();
 
 
 }
@@ -1471,13 +1534,13 @@ int main()
 //    test4_2();
 //    test5();
 //    test6();
-    test7();
+    rayIntersection_test_plane();
 //    test8();
 //    test9();
 
     quaternion_test_slerp();
-    conversion_test_EulerAnglesAndMatrix();
-    conversion_test_QuaternionAndMatrix();
+//    conversion_test_EulerAnglesAndMatrix();
+//    conversion_test_QuaternionAndMatrix();
 
 //    conversion_test_EulerAnglesAndQuaternion();
 

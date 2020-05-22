@@ -1302,7 +1302,7 @@ namespace mymath {
 		void inverse() {
 
 			conjugate();
-			float denom = abs();
+			float denom = length();
 			(*this) = (*this ) / denom;
 
 		}
@@ -1368,26 +1368,57 @@ namespace mymath {
 			Vectorf3 normal{ x, y, z };
 			normal.normalize();
 
-			T alpha = acos(w);
+			T alpha = atan2(x, w * normal.getX());
 
-			Vectorf3 v{ alpha * normal };
+			Vectorf3 v{ normal * alpha };
 
 			w = 0.0f;
 			x = v.getX();
 			y = v.getY();
 			z = v.getZ();
+
 		}
 
 		// exponential
 		void exp() {
 
 			Vectorf3 normal{ this->x, this->y, this->z };
+
+			if (normal.length() == 0.0f) {
+
+				w = 1.0f;
+				x = 0.0f;
+				y = 0.0f;
+				z = 0.0f;
+				return;
+			}
+
 			normal.normalize();
 
-			T alpha = x / normal.getX();
-			Vectorf3 v{ normal * sin(alpha) };
+			T nume;
+			T denom;
 
-			w = alpha;
+			//
+			// Choose greatest denominator;
+			//
+
+			nume = x;
+			denom = normal.getX();
+
+			if ( normal.getY() > denom ){
+				nume = y;
+				denom = normal.getY();
+			}
+			if ( normal.getZ() > denom) {
+				nume = z;
+				denom = normal.getZ();
+			}
+
+			T newAlpha = nume / denom;
+
+			Vectorf3 v{ normal * sinf(newAlpha) };
+
+			w = cosf( newAlpha );
 			x = v.getX();
 			y = v.getY();
 			z = v.getZ();
@@ -1395,29 +1426,72 @@ namespace mymath {
 		}
 
 		// exponentiation.
-		void pow(T t) {
+		void myPow(T t) {
 
 			log();
 
 			(*this) = (*this) * t;
 
 			exp();
-
 		}
 
-		T abs() {
-			return static_cast<T>(sqrt((*this) * (*this)));
+		// exponentiation.
+		void pow(T t) {
+
+			if (abs(w) < 0.9999f) {
+
+				float alpha = acosf(w);
+				float newAlpha = alpha * t;
+
+				w = cosf(newAlpha);
+
+				float mult = sinf(newAlpha) / sinf(alpha);
+
+				x *= mult;
+				y *= mult;
+				z *= mult;
+			}
 		}
 
-		void slerp(Quaternion<T> q1, T t) {
+		T length() {
+			return sqrtf((*this) * (*this));
+		}
+
+		Quaternion<T> slerp(Quaternion<T> q1, T t) {
 
 			Quaternion<T> q0 = (*this);
 			Quaternion<T> q0_2 = (*this);
 
 			q0_2.inverse();
 			Quaternion<T> qTemp = q1.product(q0_2);
+			qTemp.normalize();	// ノーマライズしないと場合によって-nanになってしまう。
 			qTemp.pow(t);
-			(*this) = qTemp.product( q0 );
+			Quaternion<T> qRet = qTemp.product( q0 );
+			return qRet;
+
+		}
+
+		Quaternion<T> mySlerp(Quaternion<T> q1, T t) {
+
+			Quaternion<T> q0 = (*this);
+			Quaternion<T> q0_2 = (*this);
+
+			q0_2.inverse();
+			Quaternion<T> qTemp = q1.product(q0_2);
+			qTemp.normalize();	// ノーマライズしないと場合によって-nanになってしまう。
+			qTemp.myPow(t);
+			Quaternion<T> qRet = qTemp.product(q0);
+			return qRet;
+
+		}
+
+		void normalize() {
+
+			T len = length();
+			w = w / len;
+			x = x / len;
+			y = y / len;
+			z = z / len;
 
 		}
 

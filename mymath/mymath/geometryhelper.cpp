@@ -36,6 +36,8 @@ bool isRayIntersectWithPlane(Vectorf3 v1, Vectorf3 v2, Vectorf3 v3, Vectorf3 ori
 
     Vectorf3 normal{ e3.cross(e1) / (e3.cross(e1).length()) };
 
+    direction.normalize();
+
     // Calculate plane direction from [0.0.0];
 
     float d = normal * v1;
@@ -49,7 +51,8 @@ bool isRayIntersectWithPlane(Vectorf3 v1, Vectorf3 v2, Vectorf3 v3, Vectorf3 ori
         return false;
     }
 
-    float t = -((normal * origin) + d) / -r;  // Attention that put negative sign in denominator is because of z-axis negative.
+//    float t = -((normal * origin) + d) / -r;  // Attention that put negative sign in denominator is because of z-axis negative.
+    float t = (normal * origin) - d;
 
     if (t < 0.0f) {
 

@@ -9,6 +9,7 @@ using namespace std;
 #define MINUS_ZERO_AND_PLUS_ZERO_SAME   0x0001
 #define ROUND_TO_3DECIMAL_PLACES        0x0002
 #define ROUND_TO_INTEGER                0x0004
+#define PRINT_ANYWAY                    0x0008
 
 
 #define ConstraintApplied( i ) ( i & constraintValue ) 
@@ -86,7 +87,7 @@ public:
 					}
 				}
 
-				if (val != ans_val) {
+				if (val != ans_val || ConstraintApplied(PRINT_ANYWAY)) {
 
 					resultMatch = false;
 				}
